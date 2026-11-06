@@ -1873,3 +1873,646 @@ th {
     right: 4%;
   }
 }
+
+/* Portrait phones use a reflowed reading mode instead of scaling the 16:9
+   canvas down until the workshop content becomes unreadable. */
+@media (max-width: 700px) and (orientation: portrait) {
+  html,
+  body,
+  #root {
+    min-height: 100%;
+    overflow: visible;
+  }
+
+  body {
+    background: var(--sky);
+  }
+
+  .stage {
+    display: block;
+    width: 100%;
+    height: auto;
+    min-height: 100dvh;
+    overflow: visible;
+    background: var(--sky);
+  }
+
+  .deck {
+    width: 100%;
+    min-height: 100dvh;
+    aspect-ratio: auto;
+    overflow: visible;
+    background: var(--sky);
+  }
+
+  .background {
+    position: absolute;
+    width: 100%;
+    height: auto;
+    aspect-ratio: 16 / 9;
+    object-fit: contain;
+    object-position: top center;
+  }
+
+  .slide-content,
+  .kind-cover {
+    position: relative;
+    inset: auto;
+    width: 100%;
+    min-height: 100dvh;
+    padding: 124px 16px 104px;
+    gap: 16px;
+    overflow: visible;
+  }
+
+  .kind-cover {
+    padding-top: 72px;
+  }
+
+  .hud {
+    position: absolute;
+    top: 48px;
+    left: 16px;
+    right: 16px;
+    width: auto;
+    height: auto;
+    min-height: 58px;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: auto auto;
+    gap: 8px;
+    padding: 8px 10px;
+    background: rgba(17, 17, 17, 0.88);
+    border: 2px solid #fff;
+    font-size: 8px;
+    line-height: 1.35;
+    text-shadow: 2px 2px #111;
+  }
+
+  .hud strong {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+
+  .pixel-title,
+  .selection-title {
+    max-width: 100%;
+    font-size: clamp(28px, 9vw, 44px);
+    line-height: 1.28;
+    overflow-wrap: anywhere;
+    -webkit-text-stroke-width: 1px;
+    text-shadow: 3px 3px #111;
+  }
+
+  .pixel-title.giant,
+  .cover-title {
+    font-size: clamp(38px, 12vw, 58px);
+  }
+
+  .card {
+    padding: 18px;
+    border-width: 4px;
+    box-shadow: 6px 6px #111;
+  }
+
+  h2 {
+    font-size: 24px;
+  }
+
+  h3 {
+    font-size: 20px;
+  }
+
+  p,
+  li,
+  td,
+  th {
+    font-size: 17px;
+    line-height: 1.5;
+  }
+
+  .subtitle {
+    font-size: 21px;
+  }
+
+  .tag {
+    font-size: 9px;
+    line-height: 1.4;
+  }
+
+  .pixel-button {
+    min-height: 52px;
+    padding: 14px 16px;
+    font-size: 10px;
+    touch-action: manipulation;
+  }
+
+  .nav {
+    position: fixed;
+    left: 10px;
+    right: 10px;
+    bottom: max(10px, env(safe-area-inset-bottom));
+    transform: none;
+    width: auto;
+    height: 54px;
+    grid-template-columns: 48px 68px 1fr 48px;
+    z-index: 30;
+  }
+
+  .nav button {
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  .nav span {
+    font-size: 8px;
+  }
+
+  .cover-grid,
+  .bingo-layout,
+  .colour-layout,
+  .type-anatomy,
+  .observe-layout,
+  .example-layout,
+  .answer-layout,
+  .resources {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+  }
+
+  .cover-grid {
+    justify-content: center;
+  }
+
+  .cover-grid h2 {
+    font-size: 24px;
+  }
+
+  .cover-card {
+    width: 100%;
+  }
+
+  .cover-card b {
+    font-size: 18px;
+  }
+
+  .cover-deco {
+    display: none;
+  }
+
+  .two-col,
+  .three-col,
+  .four-col,
+  .field-grid,
+  .mini-card-grid,
+  .concept-grid,
+  .habit-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    flex: none;
+  }
+
+  .player {
+    min-height: 420px;
+  }
+
+  .avatar {
+    width: 132px;
+  }
+
+  .bingo-layout > .card {
+    order: 1;
+  }
+
+  .bingo-grid {
+    order: 2;
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .bingo-cell {
+    min-height: 68px;
+    padding: 12px;
+    font-size: 16px;
+  }
+
+  .prize {
+    width: 100%;
+  }
+
+  .world-card {
+    min-height: calc(100dvh - 228px);
+    justify-content: flex-start;
+  }
+
+  .world-card h2 {
+    font-size: 22px;
+  }
+
+  .checklist,
+  .complete .checklist {
+    width: 100%;
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+
+  .checklist > div {
+    font-size: 17px;
+  }
+
+  .complete {
+    min-height: calc(100dvh - 228px);
+  }
+
+  .complete .world-card {
+    min-height: auto;
+  }
+
+  .level-clear {
+    min-height: 66px;
+    height: auto;
+    padding: 14px 10px;
+    font-size: 17px;
+    line-height: 1.4;
+    text-align: center;
+  }
+
+  .table-card {
+    width: 100%;
+    overflow-x: auto;
+  }
+
+  .table-card table {
+    min-width: 760px;
+  }
+
+  .table-card th,
+  .table-card td {
+    min-width: 150px;
+    padding: 12px;
+    font-size: 15px;
+  }
+
+  .yellow-bar,
+  .yellow-bar.standalone {
+    font-size: 16px;
+    line-height: 1.45;
+  }
+
+  .quote {
+    flex-direction: column;
+    align-items: flex-start;
+    font-size: 23px;
+  }
+
+  .shape-icons {
+    margin: 8px auto 0;
+  }
+
+  .level-map {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .map-stop,
+  .map-stop:nth-child(even) {
+    width: 100%;
+    min-height: 0;
+    transform: none;
+  }
+
+  .map-stop b,
+  .map-stop p {
+    font-size: 16px;
+  }
+
+  .path-line,
+  .goal-flag {
+    display: none;
+  }
+
+  .process-stairs {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding: 0;
+  }
+
+  .process-stairs > div {
+    width: 100%;
+    height: auto;
+    min-height: 126px;
+    transform: none !important;
+  }
+
+  .process-stairs b,
+  .process-stairs span {
+    font-size: 16px;
+  }
+
+  .field {
+    min-height: 104px;
+  }
+
+  .field b {
+    font-size: 18px;
+  }
+
+  .field p {
+    font-size: 15px;
+  }
+
+  .pixel-layout .card {
+    overflow-x: auto;
+  }
+
+  .chips {
+    flex-direction: column;
+  }
+
+  .chips span {
+    font-size: 16px;
+  }
+
+  .colour-wheel {
+    width: min(76vw, 320px);
+  }
+
+  .mini-card-grid .card {
+    min-height: 140px;
+  }
+
+  .four-col .card p,
+  .four-col .card b,
+  .four-col .card small {
+    font-size: 16px;
+  }
+
+  .mode-swatch {
+    min-height: 90px;
+  }
+
+  .aa-card {
+    min-height: 420px;
+  }
+
+  .big-aa {
+    left: 12%;
+    font-size: 190px;
+  }
+
+  .callout {
+    font-size: 14px;
+  }
+
+  .callout:before {
+    width: 38vw;
+  }
+
+  .type-chips {
+    gap: 16px;
+  }
+
+  .font-sample {
+    font-size: 34px;
+  }
+
+  .texture-cards .card {
+    display: flex;
+    flex-direction: column;
+    min-height: 430px;
+    padding-top: 62px;
+  }
+
+  .texture-sample,
+  .pattern-sample {
+    width: 100%;
+    min-height: 210px;
+  }
+
+  .concept-grid .card {
+    min-height: 100px;
+    padding: 18px;
+  }
+
+  .concept-grid b {
+    font-size: 17px;
+  }
+
+  .concept-grid p {
+    font-size: 15px;
+  }
+
+  .concept-definition,
+  .key-idea {
+    width: 100%;
+  }
+
+  .concept-definition p {
+    font-size: 20px;
+  }
+
+  .key-idea {
+    font-size: 18px;
+  }
+
+  .concept-footer {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 16px;
+    margin-top: 8px;
+  }
+
+  .concept-footer span {
+    font-size: 15px;
+    line-height: 1.5;
+  }
+
+  .observe-top {
+    gap: 10px;
+    align-items: stretch;
+  }
+
+  .observe-top .tag {
+    flex: 1;
+  }
+
+  .timer {
+    flex: none;
+    font-size: 9px;
+  }
+
+  .observe-layout > .card,
+  .example-layout > .card,
+  .answer-layout > .card {
+    min-height: 320px;
+  }
+
+  .tip {
+    font-size: 14px;
+  }
+
+  .screen {
+    width: 100%;
+    min-height: 360px;
+    aspect-ratio: 4 / 3;
+    padding: 10px;
+  }
+
+  .selection-row {
+    display: flex;
+    width: calc(100% + 16px);
+    margin-right: -16px;
+    padding: 6px 16px 16px 2px;
+    gap: 14px;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+  }
+
+  .selection-card {
+    width: min(78vw, 310px);
+    min-width: min(78vw, 310px);
+    min-height: 350px;
+    scroll-snap-align: center;
+  }
+
+  .selection-card .thumb {
+    min-height: 270px;
+  }
+
+  .selection-card > b {
+    font-size: 22px;
+  }
+
+  .selection-help {
+    width: 100%;
+    font-size: 15px;
+  }
+
+  .answer-layout {
+    grid-template-columns: none;
+  }
+
+  .answer-screen {
+    order: 2;
+  }
+
+  .answer-layout > .card {
+    order: 1;
+  }
+
+  .mini-design h3 {
+    font-size: clamp(25px, 8vw, 40px);
+  }
+
+  .poster-inner {
+    width: 78%;
+  }
+
+  .poster h3 {
+    font-size: 34px;
+  }
+
+  .poster h4 {
+    font-size: 18px;
+  }
+
+  .poster p,
+  .menu section p,
+  .cv section p,
+  .event p,
+  .event span,
+  .event b,
+  .product p {
+    font-size: 13px;
+  }
+
+  .menu-inner,
+  .cv-inner,
+  .event-inner {
+    width: 82%;
+  }
+
+  .logo-lockup {
+    transform: scale(0.8);
+  }
+
+  .product-inner {
+    width: 86%;
+    grid-template-columns: 0.85fr 1.15fr;
+  }
+
+  .product h3 {
+    font-size: 36px;
+  }
+
+  .juice-inner {
+    width: 86%;
+  }
+
+  .juice h3,
+  .rhythm h3,
+  .simple h3,
+  .movement h3 {
+    font-size: 44px;
+  }
+
+  .bottle {
+    min-height: 190px;
+  }
+
+  .coin-concepts {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 22px 12px;
+  }
+
+  .coin-concepts .coin {
+    width: 62px;
+    height: 78px;
+    font-size: 13px;
+  }
+
+  .coin-concepts > div {
+    font-size: 14px;
+  }
+
+  .resources > div + div {
+    border-top: 4px solid #111;
+    border-left: 0;
+    padding-top: 20px;
+    padding-left: 0;
+  }
+
+  .resources b {
+    font-size: 16px;
+  }
+
+  .resources p {
+    font-size: 15px;
+  }
+
+  .habit-grid .card {
+    min-height: 170px;
+    gap: 18px;
+  }
+
+  .thanks {
+    min-height: calc(100dvh - 228px);
+  }
+
+  .thanks p {
+    font-size: 18px;
+  }
+
+  .button-row {
+    width: 100%;
+    gap: 12px;
+  }
+
+  .button-row .pixel-button {
+    min-width: 0;
+    flex: 1;
+  }
+}
