@@ -1,1411 +1,333 @@
 import { useEffect, useMemo, useState } from "react";
 
-type Concept = {
-  n: number;
-  name: string;
-  definition: string;
-  key: string;
-  correct: string;
-  answer: string;
-  kind: string;
-};
-
 type Slide = {
   id: string;
   world: string;
   topic: string;
-  kind: string;
-  title?: string;
-  content?: string;
-  concept?: Concept;
-  variant?: string;
+  title: string;
+  subtitle?: string;
+  kind?: string;
+  tag?: string;
+  bullets?: string[];
+  cards?: { title: string; text: string }[];
+  note?: string;
+  placeholder?: string;
+  table?: string[][];
+  concept?: number;
+  variant?: "A" | "B" | "C" | "D";
+  correct?: "A" | "B" | "C" | "D";
 };
 
-const colors = {
-  red: "#E52521",
-  yellow: "#FFD700",
-  green: "#43B047",
-  charcoal: "#1E1E2E",
-  cream: "#F5F1E9",
-  ink: "#111111",
-};
+const types = [
+  ["GRAPHIC DESIGN", "Communicating ideas visually with type, colour, images and layout.", "posters, social posts, logos, CVs", "a festival poster · a brand logo · an Instagram post", "poster or logo example"],
+  ["UI DESIGN", "How a digital product looks: buttons, forms, screens, icons and colours.", "app and website interfaces", "a banking app screen · a login form · a dashboard", "app screen"],
+  ["UX DESIGN", "How a product works and feels: research, user flows and usability.", "user journeys, wireframes, prototypes", "a checkout flow · a wireframe sketch · a usability test", "wireframe or user flow"],
+  ["MOTION DESIGN", "Bringing graphics to life through animation.", "animated logos, reels, explainers", "an animated logo · a reel intro · an explainer video", "animation frames"],
+  ["PRODUCT / INDUSTRIAL", "Shaping useful, beautiful physical objects.", "furniture, packaging, devices", "a chair · a phone · a water bottle", "product photo"],
+];
 
-const concepts: Concept[] = [
-  {
-    n: 1,
-    name: "CONTRAST",
-    definition:
-      "Difference between elements—light vs dark, big vs small, bold vs thin—that makes things stand out.",
-    key: "Use contrast to show what matters first and to keep text readable.",
-    correct: "C",
-    kind: "poster",
-    answer:
-      "White text on charcoal is easy to read and the yellow accent stands out. The others use pale or muted text on similar backgrounds.",
-  },
-  {
-    n: 2,
-    name: "BALANCE",
-    definition:
-      "The way visual weight is distributed in a layout, either symmetrically or asymmetrically.",
-    key: "A balanced design feels stable; deliberate imbalance creates tension.",
-    correct: "E",
-    kind: "logo",
-    answer:
-      "Icon and name share one central axis, so visual weight is even on both sides. In the others the heavy elements sit to one side or one corner.",
-  },
-  {
-    n: 3,
-    name: "HIERARCHY",
-    definition:
-      "The order in which the eye reads information, led by size, weight, colour and position.",
-    key: "Title first, subtitle second, details last. Always decide the reading order.",
-    correct: "B",
-    kind: "menu",
-    answer:
-      "Title, section headings, dishes and prices form a clear order of importance. In the others, prices, dishes or headings outshout the level above.",
-  },
-  {
-    n: 4,
-    name: "ALIGNMENT",
-    definition: "Placing elements along common edges or axes.",
-    key: "Alignment creates invisible lines that make a layout look clean and professional.",
-    correct: "D",
-    kind: "cv",
-    answer:
-      "Every heading and line starts on the same left edge. The others have small offsets (8 to 16 px) that break the line.",
-  },
-  {
-    n: 5,
-    name: "PROXIMITY",
-    definition: "Grouping related items close together and separating unrelated ones.",
-    key: "Closeness tells the viewer “these belong together”.",
-    correct: "A",
-    kind: "event",
-    answer:
-      "Title and subtitle sit together, date and place sit together, and the button has its own space. In the others, spacing is even or groups are split.",
-  },
-  {
-    n: 6,
-    name: "REPETITION",
-    definition: "Reusing colours, fonts, shapes or spacing across a design.",
-    key: "Repetition builds consistency and brand recognition.",
-    correct: "C",
-    kind: "grid",
-    answer:
-      "All six tiles share the same size, corner radius, colours and spacing. The others change one tile’s shape, colour, size or position.",
-  },
-  {
-    n: 7,
-    name: "WHITE SPACE",
-    definition: "The empty area around and between elements, also called negative space.",
-    key: "White space gives content room to breathe and guides attention.",
-    correct: "D",
-    kind: "product",
-    answer:
-      "Generous margins and gaps give each element room to breathe. In the others margins are tight, gaps shrink or too much text fills the page.",
-  },
-  {
-    n: 8,
-    name: "PROPORTION",
-    definition:
-      "How big or small things are compared to each other. It affects how people understand what is important.",
-    key: "Big titles, medium images, small details: keep logic and visual harmony.",
-    correct: "",
-    kind: "juice",
-    answer: "Big title, medium product image, small details: sizes follow importance.",
-  },
-  {
-    n: 9,
-    name: "RHYTHM",
-    definition:
-      "A visual flow or pattern that makes the eye move naturally from one part to another.",
-    key: "Repetition + variation = rhythm. It keeps the design interesting and dynamic.",
-    correct: "",
-    kind: "rhythm",
-    answer:
-      "Tall and short bars alternate at even spacing and grow slowly: repetition + variation gives rhythm.",
-  },
-  {
-    n: 10,
-    name: "SIMPLICITY",
-    definition:
-      "Simple does not mean empty, it means clear. Remove anything that does not help the message.",
-    key: "“Less, but better.” If an element does not add value, delete it.",
-    correct: "",
-    kind: "simple",
-    answer: "One shape, one headline, one line of info. Nothing that does not help the message.",
-  },
-  {
-    n: 11,
-    name: "UNITY",
-    definition:
-      "Everything in your design looks like it belongs together: same style, colours and feeling.",
-    key: "Unity makes a design strong and trustworthy. If it looks random, people lose focus.",
-    correct: "",
-    kind: "unity",
-    answer:
-      "Letterhead, card, tag and post share one palette, one typeface and the same rounded shapes.",
-  },
-  {
-    n: 12,
-    name: "MOVEMENT",
-    definition: "How you lead the viewer’s eyes through your design.",
-    key: "Use lines, arrows, faces or shapes that point where to look.",
-    correct: "",
-    kind: "movement",
-    answer: "Arrows lead the eye from the logo to the headline and then to the call to action.",
-  },
+const process = [
+  ["BRIEF", "Meet the client, listen, write everything down and agree on the goal.", "Who is the audience? Goal? Main message? Format, deadline, budget and must-haves?", "A written brief the client approves.", "Starting to design without a clear brief."],
+  ["RESEARCH", "Study the client's field, competitors, audience and trends.", "List 5 competitors · collect references · build a moodboard · write 5 mood keywords.", "Moodboard + keyword list.", "Copying a reference instead of taking inspiration."],
+  ["BRAINSTORM / IDEATION", "Generate many ideas fast, without judging.", "Mind map · word association · Crazy 8 · quantity before quality.", "15 to 20 raw ideas.", "Stopping at the first idea."],
+  ["DRAFT SKETCH", "Turn the best ideas into quick thumbnails on paper or tablet.", "Draw 3–5 layouts in 10 minutes; use boxes for images and lines for text.", "3 to 5 rough sketches.", "Opening the software too early."],
+  ["CONCEPT DEVELOPMENT", "Choose the strongest sketch and define its visual direction.", "Test 2 palettes and font pairings · set the grid · check the brief · ask for feedback.", "A style direction + 2 rough digital versions.", "Mixing too many ideas in one design."],
+  ["DESIGN", "Build the final artwork in Figma, Illustrator or Photoshop.", "Apply the 12 concepts · use real content · organise layers · check resolution and colour mode.", "Final artwork, ready for review.", "Forgetting spelling, alignment or image quality."],
+  ["DELIVER", "Present the work, collect feedback and finish.", "Explain choices · limit revisions · export PNG/JPG/PDF/SVG · name files · ask for a testimonial.", "Final files + happy client.", "Sending the wrong format or unnamed files."],
 ];
 
 const fields = [
-  ["Logo", "A memorable mark"],
-  ["Business cards", "Tiny brand introductions"],
-  ["Banners", "Large-format messages"],
-  ["Posters", "Inform and attract"],
-  ["Thumbnails", "Win the first click"],
-  ["Publications", "Books and magazines"],
-  ["Packaging", "Products with personality"],
-  ["Branding", "A complete visual identity"],
-  ["Marketing", "Ads that drive action"],
+  ["VISUAL IDENTITY & BRANDING", "Creating the whole look and feel of a brand.", "Logo · colour palette · typography · patterns · guidelines · cards · social templates", "A brand is more than a logo.", "brand identity board"],
+  ["MARKETING & ADVERTISING", "Visuals that promote, sell or inform.", "Social posts · ads · flyers · posters · email headers · thumbnails", "One clear message and one call to action.", "ad or social post"],
+  ["PACKAGING DESIGN", "The design of boxes, bottles, bags and labels.", "Dieline · CMYK colours · legal info · 3D mockups", "Design for the shelf: stand out in 3 seconds.", "packaging mockup"],
+  ["BANNERS", "Wide formats for web and events.", "Web ads 728×90 and 300×250 · social covers · roll-ups · event backdrops", "Big readable text and a single message.", "banner example"],
 ];
 
-const conceptOverview = [
-  ["Contrast", "make things stand out"],
-  ["Balance", "distribute visual weight"],
-  ["Hierarchy", "guide the reading order"],
-  ["Alignment", "share common edges"],
-  ["Proximity", "group related items"],
-  ["Repetition", "reuse to stay consistent"],
-  ["White Space", "room to breathe"],
-  ["Proportion", "size relations"],
-  ["Rhythm", "a pattern moves the eye"],
-  ["Simplicity", "remove the unnecessary"],
-  ["Unity", "everything belongs together"],
-  ["Movement", "lead the eye"],
+const conceptData = [
+  { name: "CONTRAST", def: "Difference between elements—light vs dark, big vs small, bold vs thin—that makes things stand out.", key: "Use contrast to show what matters first and to keep text readable.", mini: "DESIGN NIGHT|Workshop for beginners|Friday 6 Nov · 9:00|ByteCraft Hub · Room 2|Free entry|REGISTER", correct: "C" as const, answer: "White text on charcoal is easy to read and the yellow accent stands out. The others use pale or muted text on similar backgrounds." },
+  { name: "BALANCE", def: "The way visual weight is distributed in a layout, either symmetrical or asymmetrical.", key: "A balanced design feels stable; deliberate imbalance creates tension.", mini: "NOVA|COFFEE ROASTERS", correct: "A" as const, answer: "Icon and name share one central axis, so visual weight is even on both sides. In the others the heavy elements sit to one side or one corner." },
+  { name: "HIERARCHY", def: "The order in which the eye reads information, led by size, weight, colour and position.", key: "Title first, subtitle second, details last. Always decide the reading order.", mini: "BISTRO LUNA|STARTERS · Harira soup $6 · Mechouia salad $7|MAINS · Lamb couscous $18 · Grilled sea bream $21|DESSERTS · Date cake $6 · Mint tea $3", correct: "B" as const, answer: "Title, section headings, dishes and prices form a clear order of importance. In the others, prices, dishes or headings outshout the level above." },
+  { name: "ALIGNMENT", def: "Placing elements along common edges or axes.", key: "Alignment creates invisible lines that make a layout look clean and professional.", mini: "Amina Haddad / Graphic Designer|PROFILE · Creative designer with 3 years of branding experience.|EXPERIENCE · Studio Nova · 2023–2025 · Social media and print|EDUCATION · BA Visual Communication · City University · 2022", correct: "D" as const, answer: "Every heading and line starts on the same left edge. The others have small offsets (8 to 16 px) that break the line." },
+  { name: "PROXIMITY", def: "Grouping related items close together and separating unrelated ones.", key: "Closeness tells the viewer “these belong together”.", mini: "WORKSHOP|Intro to Figma|Build your first interface in one session|Friday 6 November · 9:00|ByteCraft Hub · Room 2|Join us", correct: "A" as const, answer: "Title and subtitle sit together, date and place sit together, and the button has its own space. In the others, spacing is even or groups are split." },
+  { name: "REPETITION", def: "Reusing colours, fonts, shapes or spacing across a design.", key: "Repetition builds consistency and brand recognition.", mini: "MOKA|MOKA|MOKA|MOKA|MOKA|MOKA", correct: "C" as const, answer: "All six tiles share the same size, corner radius, colours and spacing. The others change one tile's shape, colour, size or position." },
+  { name: "WHITE SPACE", def: "The empty area around and between elements, also called negative space.", key: "White space gives content room to breathe and guides attention.", mini: "Slow mornings|Small-batch coffee, roasted fresh every week.|Shop now", correct: "D" as const, answer: "Generous margins and gaps give each element room to breathe. In the others margins are tight, gaps shrink or too much text fills the page." },
+  { name: "PROPORTION", def: "How big or small things are compared to each other. It affects what feels important.", key: "Big titles, medium images, small details: keep logic and visual harmony.", mini: "FRESH JUICE|$4 only|Order now|Cold-pressed daily · 100% fruit", caption: "Big title, medium product image, small details: sizes follow importance." },
+  { name: "RHYTHM", def: "A visual flow or pattern that makes the eye move naturally from one part to another.", key: "Repetition + variation = rhythm. It keeps design dynamic.", mini: "SUMMER BEATS|Open-air festival · 21 July", caption: "Tall and short bars alternate at even spacing and grow slowly: repetition + variation gives rhythm." },
+  { name: "SIMPLICITY", def: "Simple does not mean empty, it means clear. Remove anything that does not help.", key: "Less, but better. If an element does not add value, delete it.", mini: "Open mic night|Thursday · 7 pm", caption: "One shape, one headline, one line of info. Nothing that does not help the message." },
+  { name: "UNITY", def: "Everything looks like it belongs together: same style, colours and feeling.", key: "Unity makes design strong and trustworthy. Randomness loses focus.", mini: "Rosa Bakery|Bakery · Cakes|Fresh every morning", caption: "Letterhead, card, tag and post share one palette, one typeface and the same rounded shapes." },
+  { name: "MOVEMENT", def: "How you lead the viewer's eyes through your design.", key: "Use lines, arrows, faces or shapes that point where to look.", mini: "LOGO|SUMMER SALE|Up to 50% off · this weekend|Shop now", caption: "Arrows lead the eye from the logo to the headline and then to the call to action." },
 ];
 
-const baseSlides: Slide[] = [
-  { id: "S01", world: "WORLD 0-1", topic: "WELCOME", kind: "cover" },
-  { id: "S02", world: "WORLD 0-2", topic: "MEET THE PARTY", kind: "players" },
-  { id: "S03", world: "WORLD 0-3", topic: "ICEBREAKER", kind: "bingo" },
-  { id: "S04", world: "WORLD 0-4", topic: "WINNER", kind: "winner" },
-  { id: "A-00", world: "WORLD 1-0", topic: "THE BASICS", kind: "world1" },
-  { id: "A-01", world: "WORLD 1-1", topic: "WHAT IS DESIGN?", kind: "designTypes" },
-  { id: "A-02", world: "WORLD 1-2", topic: "GRAPHIC DESIGN", kind: "definition" },
-  { id: "A-03", world: "WORLD 1-3", topic: "ROADMAP", kind: "roadmap" },
-  { id: "A-04", world: "WORLD 1-4", topic: "THE PROCESS", kind: "process" },
-  { id: "A-05", world: "WORLD 1-5", topic: "DESIGN FIELDS", kind: "fields" },
-  { id: "A-06", world: "WORLD 1-6", topic: "RESOLUTION", kind: "pixels" },
-  { id: "A-END", world: "WORLD 1-7", topic: "COMPLETE", kind: "complete1" },
-  { id: "B-00", world: "WORLD 2-0", topic: "COLOUR & TYPE", kind: "world2" },
-  { id: "B-01", world: "WORLD 2-1", topic: "COLOUR THEORY", kind: "colour" },
-  { id: "B-02", world: "WORLD 2-2", topic: "COLOUR MODES", kind: "modes" },
-  { id: "B-03", world: "WORLD 2-3", topic: "TYPOGRAPHY", kind: "typography" },
-  { id: "B-04", world: "WORLD 2-4", topic: "TYPE CATEGORIES", kind: "typeCats" },
-  { id: "B-05", world: "WORLD 2-5", topic: "FONTS", kind: "fonts" },
-  { id: "B-END", world: "WORLD 2-6", topic: "COMPLETE", kind: "complete2" },
-  { id: "C-00", world: "WORLD 3-0", topic: "CORE CONCEPTS", kind: "world3" },
-  { id: "C-01", world: "WORLD 3-1", topic: "TEXTURE VS PATTERN", kind: "texture" },
-  { id: "C-02", world: "WORLD 3-2", topic: "12 CONCEPTS", kind: "overview" },
-];
+const card = (title: string, text: string) => ({ title, text });
 
-const gameSlides: Slide[] = [];
-concepts.slice(0, 7).forEach((concept) => {
-  gameSlides.push({
-    id: `C-${String(concept.n).padStart(2, "0")}-INTRO`,
-    world: `WORLD 3-${concept.n + 2}`,
-    topic: `POWER-UP ${concept.n} OF 12`,
-    kind: "concept",
-    concept,
-  });
-  ["A", "B", "C", "D", "E"].forEach((variant) =>
-    gameSlides.push({
-      id: `C-${String(concept.n).padStart(2, "0")}-${variant}`,
-      world: "BONUS ROUND",
-      topic: `${concept.name} · DESIGN ${variant}`,
-      kind: "observe",
-      concept,
-      variant,
-    }),
+function buildSlides(): Slide[] {
+  const s: Slide[] = [
+    { id: "COVER", world: "WORLD 0-1", topic: "WELCOME", title: "SKILLFEST 2", subtitle: "Graphic Design Workshop", kind: "cover", bullets: ["From design theory to your first freelance client", "Friday 6 & Saturday 7 November · Organised by ByteCraft"] },
+    { id: "ICEBREAKER", world: "WORLD 0-2", topic: "ICEBREAKER", title: "SHAPE YOUR PARTNER", subtitle: "MINI GAME · 10 MINUTES", kind: "ice", bullets: ["Pair up with someone you don't know. Speakers join in too!", "Interview them for 2 minutes: name, favourite colour, one thing they want to learn.", "Draw their portrait in 60 seconds using ONLY circles, squares and triangles.", "Swap drawings, then introduce your partner in one sentence."], note: "Most creative portrait wins a power-up!" },
+    { id: "A-00", world: "WORLD 1-1", topic: "THE BASICS", title: "WORLD 1", subtitle: "Part A · The Basics", kind: "world", bullets: ["Types of design", "Definition", "Roadmap", "Design process", "Fields", "Pixels & resolution"] },
+    { id: "A-01", world: "WORLD 1-2", topic: "TYPES OF DESIGN", title: "5 TYPES OF DESIGN", kind: "cards", cards: types.map((x) => card(x[0], x[1])), note: "UX decides what to build, UI decides how it looks, graphic design provides the visual language both rely on." },
+  ];
+  types.forEach((x, i) => s.push({ id: `A-0${i + 2}`, world: `WORLD 1-${i + 3}`, topic: "TYPES OF DESIGN", title: x[0], tag: `TYPE ${i + 1} OF 5`, kind: "example", cards: [card("WHAT IT IS", x[1]), card("TYPICAL OUTPUT", x[2]), card("3 REAL EXAMPLES", x[3]), card("SKILLS USED", "Composition · typography · colour · visual storytelling")], placeholder: x[4] }));
+  s.push(
+    { id: "A-07", world: "WORLD 1-8", topic: "DEFINITION", title: "WHAT IS GRAPHIC DESIGN?", kind: "quote", subtitle: "Graphic design = combining text, image and shape to deliver a clear message.", cards: [card("TEXT", "Words and typography"), card("IMAGE", "Photos, illustrations, icons"), card("SHAPE", "Lines, frames, colour blocks")], note: "Plus colour and layout to hold everything together." },
+    { id: "A-08", world: "WORLD 1-9", topic: "DEFINITION", title: "WHAT IT IS · AND IS NOT", kind: "compare", cards: [card("IT IS", "Problem solving with visuals · making information understandable and memorable · communicating for a goal and audience"), card("IT IS NOT", "Just decoration · just using software · just “making it pretty” · copying trends"), card("EVERYDAY DESIGN", "Road signs · packaging · app icons · menus · posters · shop logos")], note: "A designer's job: send the right message to the right person." },
+    { id: "A-09", world: "WORLD 1-10", topic: "ROADMAP", title: "DESIGNER → FREELANCER", kind: "roadmap", cards: [
+      card("1-1 BASICS", "Practise concepts + Figma daily"),
+      card("1-2 NICHE", "Social · branding · print · CVs"),
+      card("1-3 PORTFOLIO", "3–5 strong projects; show process"),
+      card("1-4 PRESENCE", "Behance · LinkedIn · Instagram"),
+      card("1-5 CLIENTS", "Friends · associations · local business"),
+      card("1-6 PRICE", "Clear brief · revisions · deposit"),
+      card("1-7 GROW", "Testimonials · specialise · learn"),
+    ] },
+    { id: "A-10", world: "WORLD 1-11", topic: "PROCESS", title: "THE DESIGN PROCESS", kind: "steps", bullets: ["BRIEF", "RESEARCH", "IDEATION", "SKETCH", "CONCEPT", "DESIGN", "DELIVER"], note: "Skipping steps 1 to 5 is the #1 beginner mistake." },
   );
-  gameSlides.push({
-    id: `C-${String(concept.n).padStart(2, "0")}-PICK`,
-    world: "BONUS ROUND",
-    topic: `CHOOSE ${concept.name}`,
-    kind: "select",
-    concept,
-  });
-  gameSlides.push({
-    id: `C-${String(concept.n).padStart(2, "0")}-ANSWER`,
-    world: `WORLD 3-${concept.n + 2}`,
-    topic: `${concept.name} · ANSWER`,
-    kind: "answer",
-    concept,
-  });
-});
-concepts.slice(7).forEach((concept) => {
-  gameSlides.push({
-    id: `C-${String(concept.n).padStart(2, "0")}-INTRO`,
-    world: `WORLD 3-${concept.n + 2}`,
-    topic: `POWER-UP ${concept.n} OF 12`,
-    kind: "concept",
-    concept,
-  });
-  gameSlides.push({
-    id: `C-${String(concept.n).padStart(2, "0")}-EXAMPLE`,
-    world: `WORLD 3-${concept.n + 2}`,
-    topic: `${concept.name} · EXAMPLE`,
-    kind: "example",
-    concept,
-  });
-});
-
-const closingSlides: Slide[] = [
-  { id: "END-01", world: "FINAL BOSS", topic: "RECAP", kind: "recap" },
-  { id: "END-02", world: "FINAL BOSS", topic: "RESOURCES", kind: "resources" },
-  { id: "END-03", world: "FINAL BOSS", topic: "KEEP GOING", kind: "habits" },
-  { id: "END-04", world: "GAME OVER", topic: "CONTINUE?", kind: "thanks" },
-];
-
-const slides = [...baseSlides, ...gameSlides, ...closingSlides];
-
-function Hud({ slide, index }: { slide: Slide; index: number }) {
-  return (
-    <header className="hud">
-      <span>{slide.world}</span>
-      <strong>{slide.topic}</strong>
-      <span>
-        SLIDE {String(index + 1).padStart(2, "0")}/{slides.length}
-      </span>
-    </header>
+  process.forEach((x, i) => s.push({ id: `A-${11 + i}`, world: `WORLD 1-${12 + i}`, topic: "DESIGN PROCESS", title: `STEP ${i + 1} · ${x[0]}`, tag: `STEP ${i + 1} OF 7`, kind: "process", concept: i + 1, cards: [card("WHAT YOU DO", x[1]), card("QUESTIONS / TECHNIQUES", x[2]), card("OUTPUT", x[3]), card("COMMON MISTAKE", x[4])] }));
+  fields.forEach((x, i) => s.push({ id: `A-${18 + i}`, world: `WORLD 1-${19 + i}`, topic: "FIELDS", title: x[0], tag: `FIELD ${i + 1} OF 4`, kind: "example", cards: [card("WHAT IT IS", x[1]), card("WHAT IT INCLUDES", x[2]), card("PRO TIP", x[3])], placeholder: x[4] }));
+  s.push(
+    { id: "A-22", world: "WORLD 1-23", topic: "PIXELS", title: "WHAT IS A PIXEL?", kind: "pixel", cards: [card("THE TINY SQUARE", "A pixel is the smallest square of colour in a digital image."), card("MORE PIXELS = MORE DETAIL", "Full HD 1920×1080 ≈ 2 million · phone photo 4000×3000 = 12 MP · Instagram 1080×1080 · Story 1080×1920 · YouTube 1280×720")] },
+    { id: "A-23", world: "WORLD 1-24", topic: "RESOLUTION", title: "PPI vs DPI", kind: "compare", cards: [card("PPI · SCREEN", "Pixels per inch. How densely pixels sit on a screen. A phone can be 400+ ppi."), card("DPI · PRINT", "Dots per inch. How many ink dots a printer places. Standard print = 300 dpi."), card("1000 PX WIDE", "At 100 ppi = 10 inches · at 300 ppi = only 3.3 inches")], note: "Web: pixel size matters · Print: 300 dpi · Big poster seen from far: 150 dpi is fine" },
+    { id: "A-24", world: "WORLD 1-25", topic: "RESOLUTION", title: "RASTER vs VECTOR", kind: "compare", cards: [card("RASTER", "Made of pixels: photos, JPG, PNG. Blurs when enlarged."), card("VECTOR", "Made of paths and maths: logos, icons, SVG, AI, PDF. Sharp at any size.")], note: "Photos = raster. Logos and icons = vector." },
+    { id: "A-25", world: "WORLD 1-26", topic: "RESOLUTION", title: "RESOLUTION IN PRACTICE", kind: "table", table: [["USE", "SIZE", "RESOLUTION"], ["Instagram post", "1080 × 1080 px", "Screen"], ["Story", "1080 × 1920 px", "Screen"], ["Business card", "1050 × 600 px", "300 dpi"], ["A4 flyer", "2480 × 3508 px", "300 dpi"]], note: "Common mistakes: stretching a small image · using a screenshot for print · saving a JPG again and again" },
+    { id: "A-26", world: "WORLD 1-27", topic: "CHECKPOINT", title: "WORLD 1 COMPLETE", subtitle: "LEVEL CLEAR!", kind: "complete", bullets: ["Types of design", "Definition", "Roadmap", "Design process", "Fields", "Pixels & resolution"] },
+    { id: "B-00", world: "WORLD 2-1", topic: "COLOUR & TYPE", title: "WORLD 2", subtitle: "Part B · Colour & Type", kind: "world", bullets: ["Colour theory", "Colour modes", "Typography", "Type categories", "Fonts"] },
+    { id: "B-01", world: "WORLD 2-2", topic: "COLOUR THEORY", title: "THE COLOUR WHEEL", kind: "wheel", bullets: ["Colour theory = rules for mixing and combining colours.", "Primary: red, yellow, blue. Screens use red, green, blue light.", "Secondary: orange, green, violet.", "Tertiary: the 6 in-between colours."] },
+    { id: "B-02", world: "WORLD 2-3", topic: "COLOUR THEORY", title: "ANATOMY OF A COLOUR", kind: "swatches", cards: [card("HUE", "The pure colour"), card("SATURATION", "How vivid or dull"), card("BRIGHTNESS / VALUE", "How light or dark"), card("TINT", "Colour + white"), card("TONE", "Colour + grey"), card("SHADE", "Colour + black")], note: "Change one at a time to build a palette." },
+    { id: "B-03", world: "WORLD 2-4", topic: "COLOUR THEORY", title: "WARM, COOL & MEANING", kind: "compare", cards: [card("WARM", "Red · orange · yellow feel energetic and close."), card("COOL", "Blue · green · violet feel calm and distant."), card("MEANING", "Red energy · Orange fun · Yellow optimism · Green growth · Blue trust · Purple luxury · Black power · White clean")], note: "Meanings change between cultures. Always check your audience." },
+    { id: "B-04", world: "WORLD 2-5", topic: "COLOUR THEORY", title: "COLOUR HARMONIES", kind: "cards", cards: [card("MONOCHROMATIC", "One hue, many tints and shades"), card("ANALOGOUS", "Neighbours; calm"), card("COMPLEMENTARY", "Opposites; strong contrast"), card("SPLIT-COMP", "One + neighbours of opposite"), card("TRIADIC", "Three evenly spaced; playful")] },
+    { id: "B-05", world: "WORLD 2-6", topic: "COLOUR THEORY", title: "USING COLOUR WELL", kind: "list", bullets: ["60–30–10: dominant, secondary, accent", "Limit palettes to 3–5 colours", "Text contrast: at least 4.5:1", "Test your design in greyscale", "Tools: Coolors · Adobe Color · Color Hunt"] },
   );
-}
-
-function Card({
-  children,
-  className = "",
-  tone = "light",
-}: {
-  children: React.ReactNode;
-  className?: string;
-  tone?: "light" | "dark" | "yellow";
-}) {
-  return <div className={`card ${tone} ${className}`}>{children}</div>;
-}
-
-function PixelButton({
-  children,
-  onClick,
-  disabled,
-}: {
-  children: React.ReactNode;
-  onClick?: () => void;
-  disabled?: boolean;
-}) {
-  return (
-    <button className="pixel-button" onClick={onClick} disabled={disabled}>
-      {children}
-    </button>
+  [
+    ["B-06", "COMPLEMENTARY", "complementary colour design", "Opposite colours make the focal point pop.", "#1F4E9C · #F28C28 · #FFFFFF · #111111 · #FFD700"],
+    ["B-07", "ANALOGOUS", "analogous sunset colour design", "Neighbouring colours feel calm and unified.", "#E52521 · #F28C28 · #FFD700 · #F6B26B · #FFF1D0"],
+    ["B-08", "MONOCHROMATIC", "monochromatic colour design", "One hue, many values: simple and elegant.", "#0B1F3A · #1F4E9C · #6495F7 · #A8C5FF · #EAF1FF"],
+  ].forEach((x, i) => s.push({ id: x[0], world: `WORLD 2-${7 + i}`, topic: "COLOUR EXAMPLES", title: `EXAMPLE ${i + 1} · ${x[1]}`, kind: "example", cards: [card("PALETTE", x[4]), card("WHY IT WORKS", x[3])], placeholder: x[2] }));
+  s.push(
+    { id: "B-09", world: "WORLD 2-10", topic: "COLOUR MODES", title: "COLOUR MODES", kind: "cards", cards: [card("RGB", "Light for screens"), card("CMYK", "Ink for print"), card("GRAYSCALE", "256 shades, no hue"), card("BITMAP", "Black or white only")], note: "Screen = RGB · Print = CMYK. Pick the mode before you start." },
+    { id: "B-10", world: "WORLD 2-11", topic: "COLOUR MODES", title: "RGB · LIGHT", kind: "rgb", bullets: ["Additive colour made of LIGHT", "Red, green and blue overlap to white", "Each channel: 0–255 = 16.7 million colours", "Pure red: 255, 0, 0 = #FF0000", "Websites · social media · apps · video", "Figma works in RGB"] },
+    { id: "B-11", world: "WORLD 2-12", topic: "COLOUR MODES", title: "CMYK · INK", kind: "cmyk", bullets: ["Subtractive colour made of INK", "Cyan, magenta, yellow + K (key black)", "Each ink: 0–100%", "Flyers · posters · cards · packaging", "Bright RGB colours may print duller", "Ask your printer which profile to use"] },
+    { id: "B-12", world: "WORLD 2-13", topic: "COLOUR MODES", title: "GRAYSCALE", kind: "gradient", bullets: ["One brightness channel, no hue", "Black 0 → white 255 = 256 shades", "Used for photos, newspapers, single-ink print", "Designer trick: use greyscale to test contrast and hierarchy"] },
+    { id: "B-13", world: "WORLD 2-14", topic: "COLOUR MODES", title: "BITMAP", kind: "modes", bullets: ["Only 1 bit per pixel", "Pure black or pure white—no greys", "Line art · stamps · scanned text · engraving · one-colour logos"], placeholder: "same image in RGB · CMYK · Grayscale · Bitmap" },
+    { id: "B-14", world: "WORLD 2-15", topic: "COLOUR MODES", title: "WHICH MODE SHOULD I USE?", kind: "table", table: [["PROJECT", "MODE"], ["Instagram / website / app", "RGB"], ["Business card / poster / flyer", "CMYK"], ["Newspaper photo", "Grayscale"], ["Stamp / laser engraving", "Bitmap"]], note: "Design in RGB in Figma, export PDF for print and confirm the colour profile with your printer." },
+    { id: "B-15", world: "WORLD 2-16", topic: "TYPOGRAPHY", title: "THE ART OF ARRANGING TYPE", kind: "quote", subtitle: "Good typography is invisible. Bad typography is noticed.", bullets: ["Choosing typefaces", "Size and weight", "Leading, tracking, kerning", "Alignment", "Hierarchy"] },
+    { id: "B-16", world: "WORLD 2-17", topic: "TYPOGRAPHY", title: "ANATOMY OF A LETTER", kind: "anatomy", cards: [card("BASELINE", "Where letters sit"), card("CAP HEIGHT", "Top of capitals"), card("X-HEIGHT", "Height of lowercase x"), card("ASCENDER", "Part rising above x-height"), card("DESCENDER", "Part below baseline"), card("SERIF", "Small finishing stroke"), card("STEM", "Main vertical stroke"), card("COUNTER", "Enclosed inner space")] },
+    { id: "B-17", world: "WORLD 2-18", topic: "TYPOGRAPHY", title: "TYPE PROPERTIES", kind: "cards", cards: [card("SIZE", "px or pt"), card("WEIGHT", "Light → Black"), card("LEADING", "1.4–1.6× body size"), card("TRACKING", "Space across letters"), card("KERNING", "Space between two: AV"), card("ALIGNMENT", "Left · centre · right")] },
+    { id: "B-18", world: "WORLD 2-19", topic: "TYPOGRAPHY", title: "READABILITY RULES", kind: "compare", cards: [card("BEFORE", "Tiny, tight, long lines and no breathing room make reading hard."), card("AFTER", "Balanced line length, spacing and hierarchy help readers scan.")], bullets: ["45–75 characters per line", "At least 16 px for body on screen", "No long paragraphs in ALL CAPS", "Maximum 2 fonts", "Use size, weight and colour for hierarchy"] },
+    { id: "B-19", world: "WORLD 2-20", topic: "TYPE CATEGORIES", title: "CHOOSE YOUR FIGHTER", kind: "fighters", cards: [card("SERIF", "Classic · The Professor"), card("SANS SERIF", "Modern · Friendly Techie"), card("SCRIPT", "Playful · The Poet"), card("DISPLAY", "Bold · The Showman")], note: "BONUS: MONOSPACE for code — Space Mono" },
   );
+  [
+    ["SERIF", "THE PROFESSOR", "Classic · trustworthy · elegant", "Old-style: EB Garamond · Transitional: Libre Baskerville · Didone: Bodoni Moda · Slab: Roboto Slab", "Books · newspapers · luxury brands · law", "Great for headlines paired with sans body."],
+    ["SANS SERIF", "THE FRIENDLY TECHIE", "Clean · modern · neutral", "Grotesque: Inter · Geometric: Poppins · Humanist: Open Sans", "Apps · websites · UI · signage", "Safest choice for body text on screens."],
+    ["SCRIPT", "THE POET", "Elegant · personal · romantic", "Formal: Great Vibes · Casual: Pacifico · Brush: Caveat", "Invitations · weddings · beauty · signatures", "Never in ALL CAPS or for long text."],
+    ["DISPLAY", "THE SHOWMAN", "Bold · loud · decorative", "Retro: Bungee · Pixel: Press Start 2P · Stencil · Blackletter", "Posters · logos · titles", "Titles only, never body text."],
+  ].forEach((x, i) => s.push({ id: `B-${20 + i}`, world: `WORLD 2-${21 + i}`, topic: "TYPE CATEGORIES", title: x[0], subtitle: x[1], tag: `FIGHTER ${i + 1} OF 4`, kind: "type", cards: [card("PERSONALITY", x[2]), card("SUBTYPES", x[3]), card("USED FOR", x[4]), card("PAIRING TIP", x[5])], placeholder: `${x[0]} SkillFest · ABCDEFGHIJKLMNOPQRSTUVWXYZ` }));
+  s.push(
+    { id: "B-24", world: "WORLD 2-25", topic: "FONTS", title: "TYPEFACE vs FAMILY vs FONT", kind: "cards", cards: [card("TYPEFACE", "The design itself. Example: Inter."), card("FONT FAMILY", "All versions: Light, Regular, Medium, Bold, Italic."), card("FONT", "One specific version: Inter Bold 700, 24 px.")], note: "Typeface = design · Family = whole set · Font = one version you type with." },
+    { id: "B-25", world: "WORLD 2-26", topic: "FONTS", title: "WEIGHTS & PAIRING", kind: "weights", bullets: ["Thin 100 → Regular 400 → Bold 700 → Black 900", "GOOD · Playfair Display headline + Inter body", "GOOD · Poppins Bold + Poppins Light", "BAD · Pacifico + Bungee: two loud fonts fight", "Max 2 fonts · pair serif with sans · contrast weight and size"] },
+    { id: "B-26", world: "WORLD 2-27", topic: "FONTS", title: "WHERE TO FIND FONTS", kind: "cards", cards: [card("GOOGLE FONTS", "Free, open-source"), card("FONTSHARE", "Free quality families"), card("FONT SQUIRREL", "Curated free fonts")], note: "Check the licence: personal use is not always commercial use. Install fonts before opening a client file." },
+    { id: "B-27", world: "WORLD 2-28", topic: "CHECKPOINT", title: "WORLD 2 COMPLETE", subtitle: "LEVEL CLEAR!", kind: "complete", bullets: ["Colour theory", "Colour modes", "Typography", "Type categories", "Fonts"] },
+    { id: "C-00", world: "WORLD 3-1", topic: "CORE CONCEPTS", title: "WORLD 3", subtitle: "Part C · Concepts", kind: "world", bullets: ["Texture vs pattern", "The 12 core concepts", "Observation bonus rounds", "Practice"] },
+    { id: "C-01", world: "WORLD 3-2", topic: "TEXTURE vs PATTERN", title: "THE BIG DIFFERENCE", kind: "compare", cards: [card("TEXTURE", "How a surface looks or feels: rough, grainy, smooth. Irregular, not repeated on purpose."), card("PATTERN", "A motif repeated in a planned order: rhythmic, regular and tileable.")], note: "Texture = feeling. Pattern = repetition." },
+    { id: "C-02", world: "WORLD 3-3", topic: "TEXTURE", title: "TEXTURE EXAMPLES", kind: "gallery", bullets: ["PAPER", "CONCRETE", "WOOD GRAIN", "FABRIC", "WATERCOLOUR", "FILM GRAIN"], note: "Touchable and irregular. Used for depth, realism and a handmade feel." },
+    { id: "C-03", world: "WORLD 3-4", topic: "PATTERN", title: "PATTERN EXAMPLES", kind: "patterns", bullets: ["STRIPES", "POLKA DOTS", "CHECKERBOARD", "CHEVRON", "TRIANGLES", "FLORAL GRID"], note: "A motif repeated at regular intervals. Used for textiles, wrapping and brands." },
+    { id: "C-04", world: "WORLD 3-5", topic: "TEXTURE vs PATTERN", title: "HOW TO TELL THEM APART", kind: "compare", cards: [card("3-QUESTION TEST", "1 Can you spot one repeating motif? → pattern. 2 Does it feel touchable and irregular? → texture. 3 Could it become a seamless tile? → pattern."), card("QUICK COMPARE", "Repetition: random / planned · Feeling: tactile / rhythmic · Made from: surface detail / repeated motif")], note: "A brick wall PHOTO = texture. A drawn brick repeated = pattern." },
+    { id: "C-05", world: "WORLD 3-6", topic: "QUICK QUIZ", title: "TEXTURE OR PATTERN?", kind: "quiz", cards: [card("BRICK WALL PHOTO", "TEXTURE"), card("POLKA DOTS", "PATTERN"), card("SANDPAPER", "TEXTURE"), card("ZEBRA STRIPES", "PATTERN"), card("CRACKED PAINT", "TEXTURE"), card("TILED FLOOR", "PATTERN")] },
+    { id: "C-06", world: "WORLD 3-7", topic: "12 CORE CONCEPTS", title: "THE 12 POWER-UPS", kind: "conceptgrid", cards: conceptData.map((c, i) => card(`${i + 1} · ${c.name}`, c.def.split(".")[0])) },
+  );
+  conceptData.slice(0, 7).forEach((c, i) => {
+    const start = s.length;
+    s.push({ id: `C-${7 + i * 7}`, world: `WORLD 3-${8 + i * 7}`, topic: "POWER-UP", title: c.name, tag: `CONCEPT ${i + 1} OF 12`, kind: "concept", concept: i + 1, cards: [card("DEFINITION", c.def), card("KEY IDEA", c.key)], note: `Next: spot the design that respects ${c.name}.` });
+    (["A", "B", "C", "D"] as const).forEach((v, j) => s.push({ id: `C-${8 + i * 7 + j}`, world: `WORLD 3-${9 + i * 7 + j}`, topic: "BONUS ROUND", title: `DESIGN ${v}`, tag: "TIME 015", kind: "observe", concept: i + 1, variant: v, correct: c.correct, bullets: c.mini.split("|"), note: `Take 15 seconds. Does this design respect ${c.name}? Note your answer.` }));
+    s.push({ id: `C-${12 + i * 7}`, world: `WORLD 3-${13 + i * 7}`, topic: "CHOOSE", title: `WHICH ONE RESPECTS ${c.name}?`, kind: "select", concept: i + 1, correct: c.correct });
+    s.push({ id: `C-${13 + i * 7}`, world: `WORLD 3-${14 + i * 7}`, topic: "LEVEL CLEAR", title: `${c.name} · ANSWER`, subtitle: `DESIGN ${c.correct}`, kind: "answer", concept: i + 1, variant: c.correct, bullets: c.mini.split("|"), note: c.answer });
+    void start;
+  });
+  conceptData.slice(7).forEach((c, i) => {
+    const n = i + 8;
+    s.push({ id: `C-${56 + i * 2}`, world: `WORLD 3-${57 + i * 2}`, topic: "POWER-UP", title: c.name, tag: `CONCEPT ${n} OF 12`, kind: "concept", concept: n, cards: [card("DEFINITION", c.def), card("KEY IDEA", c.key)], note: `Next: ${c.name} in action.` });
+    s.push({ id: `C-${57 + i * 2}`, world: `WORLD 3-${58 + i * 2}`, topic: "EXAMPLE", title: `${c.name} IN ACTION`, kind: "conceptExample", concept: n, bullets: c.mini.split("|"), note: c.caption });
+  });
+  s.push(
+    { id: "PRACTICE-01", world: "BONUS STAGE", topic: "PRACTICE", title: "TIME FOR PRACTICE!", subtitle: "You know the 12 concepts. Now let's use them!", kind: "practice", cards: [card("NEXT STOP", "The basics of FIGMA")], bullets: ["Buttons", "Placeholders", "Image placeholders", "Text styles & colours", "Icons & shapes", "Cards & lists", "Grids & alignment"] },
+    { id: "END-1", world: "FINAL WORLD", topic: "FINAL BOSS", title: "WHICH CONCEPTS DID YOU USE?", kind: "conceptgrid", cards: conceptData.map((c, i) => card(`${i + 1}`, c.name)), note: "Which concept do you find the hardest?" },
+    { id: "END-2", world: "FINAL WORLD", topic: "RESOURCES", title: "YOUR TOOLBOX", kind: "resources", cards: [card("DESIGN TOOLS", "Figma · Illustrator · Photoshop · Canva · Affinity"), card("COLOUR", "Coolors · Adobe Color · Color Hunt"), card("FONTS", "Google Fonts · Fontshare · Font Squirrel"), card("INSPIRATION", "Behance · Dribbble · Pinterest · Awwwards"), card("ASSETS", "Unsplash · Pexels · Freepik · Flaticon — check licences"), card("CLIENTS & ADMIN", "Upwork · Fiverr · Contra · LinkedIn · Notion · Trello"), card("BOOKS", "The Non-Designer's Design Book · Thinking with Type")] },
+    { id: "END-3", world: "FINAL WORLD", topic: "KEEP GOING", title: "YOUR NEXT CHECKPOINT", kind: "cards", cards: [card("DAILY XP", "Design a little every day—even 30 minutes."), card("COPY TO LEARN", "Recreate before you create."), card("FEEDBACK", "Ask early and often."), card("SAVE PROGRESS", "Your portfolio is made of small wins.")] },
+    { id: "END-4", world: "FINAL WORLD", topic: "CONTINUE?", title: "THANK YOU!", subtitle: "GAME OVER... CONTINUE? YES / NO", kind: "end", note: "Good luck, designers! Your next checkpoint is your first client." },
+  );
+  return s;
 }
 
-function Tag({ children }: { children: React.ReactNode }) {
-  return <span className="tag">{children}</span>;
+function PixelArt({ type = "coin" }: { type?: "coin" | "block" | "pipe" | "flag" }) {
+  return <span className={`pixel-art ${type}`} aria-hidden="true"><i /></span>;
 }
 
-function QuestionBlock({ small = false }: { small?: boolean }) {
-  return <div className={`question ${small ? "small" : ""}`}>?</div>;
+function Card({ title, text, yellow = false }: { title: string; text: string; yellow?: boolean }) {
+  return <article className={`card ${yellow ? "yellow" : ""}`}><h3>{title}</h3><p>{text}</p></article>;
 }
 
-function Coin({ n }: { n?: number }) {
-  return <span className="coin">{n}</span>;
+const examplePhotos: Record<string, { src: string; credit: string }> = {
+  "poster or logo example": { src: "https://images.unsplash.com/photo-1610454059909-f9a5a6eb4e58?auto=format&fit=crop&w=1400&q=85", credit: "Brett Jordan" },
+  "app screen": { src: "https://images.unsplash.com/photo-1581287053822-fd7bf4f4bfec?auto=format&fit=crop&w=1400&q=85", credit: "charlesdeluvio" },
+  "wireframe or user flow": { src: "https://images.unsplash.com/photo-1522542550221-31fd19575a2d?auto=format&fit=crop&w=1400&q=85", credit: "Hal Gatewood" },
+  "animation frames": { src: "https://images.unsplash.com/photo-1574717024653-61fd2cf4d44d?auto=format&fit=crop&w=1400&q=85", credit: "Peter Stumpf" },
+  "product photo": { src: "https://images.unsplash.com/photo-1683818051102-dd1199d163b9?auto=format&fit=crop&w=1400&q=85", credit: "Kevin Shek" },
+  "brand identity board": { src: "https://images.unsplash.com/photo-1590102426275-8d1c367070d3?auto=format&fit=crop&w=1400&q=85", credit: "Slidebean" },
+  "ad or social post": { src: "https://images.unsplash.com/photo-1675352161865-27816c76141a?auto=format&fit=crop&w=1400&q=85", credit: "Shutter Speed" },
+  "packaging mockup": { src: "https://images.unsplash.com/photo-1793693538739-523c0e01c8c1?auto=format&fit=crop&w=1400&q=85", credit: "Olha Bolharyna" },
+  "banner example": { src: "https://images.unsplash.com/photo-1778293444371-a720539f1c3f?auto=format&fit=crop&w=1400&q=85", credit: "Henry Lösing" },
+  "complementary colour design": { src: "https://images.unsplash.com/photo-1517815154571-fbabad618f3f?auto=format&fit=crop&w=1400&q=85", credit: "Oleg Laptev" },
+  "analogous sunset colour design": { src: "https://images.unsplash.com/photo-1519977552815-08175cb3375a?auto=format&fit=crop&w=1400&q=85", credit: "Emerson Peters" },
+  "monochromatic colour design": { src: "https://images.unsplash.com/photo-1608507777998-7b4f2c269120?auto=format&fit=crop&w=1400&q=85", credit: "Kind and Curious" },
+};
+
+function ExampleVisual({ label }: { label: string }) {
+  if (label.includes("SkillFest")) {
+    const family = label.split(" ")[0].toLowerCase();
+    return <figure className={`example-visual type-showcase ${family}`}>
+      <span className="specimen-kicker">LIVE TYPE SPECIMEN</span>
+      <strong>SkillFest</strong>
+      <p>ABCDEFGHIJKLMNOPQRSTUVWXYZ</p>
+      <p>abcdefghijklmnopqrstuvwxyz</p>
+      <div><b>Aa</b><span>Graphic design begins<br />with clear typography.</span></div>
+    </figure>;
+  }
+  if (label.includes("RGB · CMYK")) {
+    const src = "https://images.unsplash.com/photo-1715154470884-1c2be0b0129f?auto=format&fit=crop&w=1200&q=85";
+    return <figure className="example-visual mode-comparison">{["RGB", "CMYK", "GRAYSCALE", "BITMAP"].map(mode => <div key={mode} className={mode.toLowerCase()}><img src={src} alt={`${mode} colour mode example`} /><b>{mode}</b></div>)}</figure>;
+  }
+  const photo = examplePhotos[label] || examplePhotos["poster or logo example"];
+  return <figure className="example-visual photo-example">
+    <img src={photo.src} alt={`${label} example`} />
+    <figcaption><span>REAL-WORLD EXAMPLE</span><b>{label}</b><small>Photo: {photo.credit} / Unsplash</small></figcaption>
+  </figure>;
 }
 
-function LevelClear() {
+function MiniDesign({ concept = 1, variant = "A", lines = [] }: { concept?: number; variant?: string; lines?: string[] }) {
   return (
-    <div className="level-clear">
-      <span className="flag">⚑</span>
-      LEVEL CLEAR!
+    <div className={`mini concept-${concept} variant-${variant}`}>
+      <span className="variant-badge">{variant}</span>
+      {concept === 2 && <span className="bean" />}
+      {concept === 6 ? <div className="moka-grid">{lines.map((x, i) => <i key={i}>{x}</i>)}</div> :
+        concept === 9 ? <><h4>{lines[0]}</h4><div className="rhythm-bars">{[2,4,3,6,4,8,5,10].map((x, i) => <i key={i} style={{ height: `${x * 8}%` }} />)}</div><p>{lines[1]}</p></> :
+        concept === 11 ? <><h4>{lines[0]}</h4><div className="stationery"><i /><i /><i /><i /></div><p>{lines.slice(1).join(" · ")}</p></> :
+        lines.map((line, i) => i === 0 ? <h4 key={i}>{line}</h4> : i === lines.length - 1 && /register|join|shop|order/i.test(line) ? <button key={i}>{line}</button> : <p key={i}>{line}</p>)}
+      {concept === 12 && <div className="arrows">→<br />↘</div>}
+      {concept === 4 && variant === "D" && <span className="guide" />}
     </div>
   );
 }
 
-function WorldCard({
-  world,
-  subtitle,
-  items,
-  complete = false,
-}: {
-  world: string;
-  subtitle: string;
-  items: string[];
-  complete?: boolean;
-}) {
-  return (
-    <div className="world-card">
-      <h1 className="pixel-title giant">{world}</h1>
-      <h2>{subtitle}</h2>
-      <Card className="checklist">
-        {items.map((item) => (
-          <div key={item}>
-            <span className={complete ? "checked box" : "box"}>{complete ? "✓" : ""}</span>
-            {item}
-          </div>
-        ))}
-      </Card>
-    </div>
-  );
-}
-
-function MiniDesign({
-  concept,
-  variant = "A",
-  answer = false,
-}: {
-  concept: Concept;
-  variant?: string;
-  answer?: boolean;
-}) {
-  const wrong = variant !== concept.correct && concept.correct;
-  return (
-    <div className={`mini-design ${concept.kind} v-${variant} ${wrong ? "wrong" : ""}`}>
-      {concept.kind === "poster" && (
-        <div className="poster-inner">
-          <small>BYTECRAFT PRESENTS</small>
-          <h3>DESIGN NIGHT</h3>
-          <h4>Workshop for beginners</h4>
-          <div className="rule" />
-          <p>Friday 6 Nov · 9:00</p>
-          <p>ByteCraft Hub · Room 2</p>
-          <b>Free entry</b>
-          <button>REGISTER</button>
-        </div>
-      )}
-      {concept.kind === "logo" && (
-        <div className="logo-lockup">
-          <div className="bean">
-            <i />
-          </div>
-          <div>
-            <h3>{variant === "C" ? "NOV" : "NOVA"}</h3>
-            <p>{variant === "C" ? "ROASTER" : "COFFEE ROASTERS"}</p>
-          </div>
-          {variant === "C" && (
-            <>
-              <b className="stray a">A</b>
-              <b className="stray s">S</b>
-            </>
-          )}
-        </div>
-      )}
-      {concept.kind === "menu" && (
-        <div className="menu-inner">
-          <h3>BISTRO LUNA</h3>
-          <MenuSection title="STARTERS" rows={["Harira soup · $6", "Mechouia salad · $7"]} />
-          <MenuSection title="MAINS" rows={["Lamb couscous · $18", "Grilled sea bream · $21"]} />
-          <MenuSection title="DESSERTS" rows={["Date cake · $6", "Mint tea · $3"]} />
-        </div>
-      )}
-      {concept.kind === "cv" && (
-        <div className="cv-inner">
-          {answer && <span className="alignment-guide" />}
-          <h3>Amina Haddad</h3>
-          <h4>Graphic Designer</h4>
-          <section>
-            <b>PROFILE</b>
-            <p>Creative designer with 3 years of experience in branding.</p>
-          </section>
-          <section>
-            <b>EXPERIENCE</b>
-            <p>
-              Studio Nova · 2023–2025
-              <br />
-              Social media and print work
-            </p>
-          </section>
-          <section>
-            <b>EDUCATION</b>
-            <p>BA Visual Communication · City University · 2022</p>
-          </section>
-        </div>
-      )}
-      {concept.kind === "event" && (
-        <div className="event-inner">
-          {answer && (
-            <>
-              <i className="group-outline g1" />
-              <i className="group-outline g2" />
-              <i className="group-outline g3" />
-            </>
-          )}
-          <div className="event-title">
-            <small>WORKSHOP</small>
-            <h3>Intro to Figma</h3>
-            <p>Build your first interface in one session</p>
-          </div>
-          <div className="event-info">
-            <b>Friday 6 November · 9:00</b>
-            <span>ByteCraft Hub · Room 2</span>
-          </div>
-          <button>Join us</button>
-        </div>
-      )}
-      {concept.kind === "grid" && (
-        <div className="moka">
-          {["MOKA", "01", "ROAST", "02", "SLOW", "COFFEE"].map((x, i) => (
-            <div key={i} className={`tile t${i}`}>
-              {x}
-            </div>
-          ))}
-        </div>
-      )}
-      {concept.kind === "product" && (
-        <div className="product-inner">
-          <div className="cup">M</div>
-          <div>
-            <small>MOKA COFFEE</small>
-            <h3>Slow mornings</h3>
-            <p>Small-batch coffee, roasted fresh every week.</p>
-            {["A", "B", "E"].includes(variant) && (
-              <p className="extra">
-                Delivered to your door. Free shipping over $30. Subscribe and save 10%.
-              </p>
-            )}
-            {variant === "B" && (
-              <p className="extra">Cancel anytime. Fair trade beans. Organic and local.</p>
-            )}
-            <button>Shop now</button>
-          </div>
-        </div>
-      )}
-      {concept.kind === "juice" && (
-        <div className="juice-inner">
-          <div>
-            <small>COLD-PRESSED DAILY</small>
-            <h3>
-              FRESH
-              <br />
-              JUICE
-            </h3>
-            <p>100% fruit</p>
-            <button>Order now</button>
-          </div>
-          <div className="bottle">JUICE</div>
-          <b className="price">
-            $4
-            <br />
-            only
-          </b>
-        </div>
-      )}
-      {concept.kind === "rhythm" && (
-        <div className="rhythm-inner">
-          <small>OPEN-AIR FESTIVAL · 21 JULY</small>
-          <h3>
-            SUMMER
-            <br />
-            BEATS
-          </h3>
-          <div className="bars">
-            {[3, 5, 4, 7, 5, 9, 6, 11, 8, 13].map((h, i) => (
-              <i key={i} style={{ height: `${h * 8}px` }} />
-            ))}
-          </div>
-        </div>
-      )}
-      {concept.kind === "simple" && (
-        <div className="simple-inner">
-          <i />
-          <small>COMMUNITY STAGE</small>
-          <h3>
-            Open mic
-            <br />
-            night
-          </h3>
-          <p>Thursday · 7 pm</p>
-        </div>
-      )}
-      {concept.kind === "unity" && (
-        <div className="unity-inner">
-          <h3>Rosa Bakery</h3>
-          <div className="stationery letter">
-            ROSA
-            <br />
-            <small>Fresh every morning</small>
-          </div>
-          <div className="stationery business">
-            Rosa
-            <br />
-            <small>Bakery · Cakes</small>
-          </div>
-          <div className="stationery tag-shape">R</div>
-          <div className="stationery social">
-            Fresh every
-            <br />
-            morning
-          </div>
-        </div>
-      )}
-      {concept.kind === "movement" && (
-        <div className="movement-inner">
-          <small>LOGO</small>
-          <i className="arrow a1">➜</i>
-          <h3>
-            SUMMER
-            <br />
-            SALE
-          </h3>
-          <i className="arrow a2">➜</i>
-          <p>Up to 50% off · this weekend</p>
-          <button>Shop now</button>
-        </div>
-      )}
-    </div>
-  );
-}
-
-function MenuSection({ title, rows }: { title: string; rows: string[] }) {
-  return (
-    <section>
-      <b>{title}</b>
-      {rows.map((r) => (
-        <p key={r}>{r}</p>
-      ))}
-    </section>
-  );
-}
-
-function Cover({ go }: { go: () => void }) {
-  return (
-    <div className="cover-grid">
-      <div>
-        <Tag>BYTECRAFT PRESENTS</Tag>
-        <h1 className="pixel-title cover-title">SKILLFEST 2</h1>
-        <h2>Graphic Design Workshop</h2>
-        <Card className="cover-card">
-          <b>From design theory to your first freelance client</b>
-          <p>Friday 6 & Saturday 7 November · Organised by ByteCraft</p>
-        </Card>
-        <PixelButton onClick={go}>PRESS START</PixelButton>
-      </div>
-      <div className="cover-deco">
-        <div className="coin-row">
-          <Coin />
-          <Coin />
-          <Coin />
-        </div>
-        <QuestionBlock />
-      </div>
-    </div>
-  );
-}
-
-const tableRows = [
-  [
-    "Graphic design",
-    "Communicating ideas visually with type, colour, images, layout",
-    "Posters, social posts, logos, CVs",
-  ],
-  [
-    "UI design",
-    "How a digital product looks: buttons, forms, screens",
-    "App and website interfaces",
-  ],
-  [
-    "UX design",
-    "How a product works and feels: research, flows, usability",
-    "Journeys, wireframes, prototypes",
-  ],
-  [
-    "Motion design",
-    "Bringing graphics to life through animation",
-    "Animated logos, reels, explainers",
-  ],
-  ["Product / Industrial", "Shaping physical objects", "Furniture, packaging, devices"],
-];
-
-function SlideContent({
-  slide,
-  go,
-  index,
-}: {
-  slide: Slide;
-  go: (i: number) => void;
-  index: number;
-}) {
-  const c = slide.concept;
+function SlideView({ slide, index, total, go }: { slide: Slide; index: number; total: number; go: (n: number) => void }) {
+  const renderCards = (cards = slide.cards, yellow = false) => <div className={`cards cards-${Math.min(cards?.length || 1, 6)}`}>{cards?.map((c, i) => <Card key={i} title={c.title} text={c.text} yellow={yellow && i === 1} />)}</div>;
+  let body: React.ReactNode;
   switch (slide.kind) {
     case "cover":
-      return <Cover go={() => go(index + 1)} />;
-    case "players":
-      return (
-        <>
-          <h1 className="pixel-title">PLAYER SELECT</h1>
-          <p className="subtitle">Today's party: Day 1 · Day 2</p>
-          <div className="two-col">
-            {["Sonia", "Imene"].map((name, i) => (
-              <Card className="player" key={name}>
-                <Tag>Speaker {i + 1}</Tag>
-                <div className="avatar">{name[0]}</div>
-                <h2>{name}</h2>
-                <p>Graphic designer · Creative guide</p>
-                <PixelButton>SELECT</PixelButton>
-              </Card>
-            ))}
-          </div>
-        </>
-      );
-    case "bingo":
-      return (
-        <>
-          <div className="title-row">
-            <div>
-              <Tag>10 MINUTES</Tag>
-              <h1 className="pixel-title">WARP ZONE BINGO</h1>
-            </div>
-          </div>
-          <div className="bingo-layout">
-            <Card>
-              <h2>Break the ice</h2>
-              <ol>
-                <li>Stand up and walk around.</li>
-                <li>Find a different person for each square. They sign their name.</li>
-                <li>First complete row shouts “1-UP!”.</li>
-              </ol>
-              <b>Speakers play too!</b>
-            </Card>
-            <div className="bingo-grid">
-              {[
-                "Has designed a poster",
-                "Uses Figma",
-                "Has a favourite font",
-                "Has had a paying client",
-                "Knows a HEX colour",
-                "Has a Behance account",
-                "Draws by hand",
-                "Loves Canva",
-                "Never designed before",
-              ].map((x) => (
-                <div className="bingo-cell" key={x}>
-                  <QuestionBlock small />
-                  <span>{x}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </>
-      );
-    case "winner":
-      return (
-        <div className="center-screen">
-          <div className="coin-burst">
-            {[1, 2, 3, 4, 5].map((n) => (
-              <Coin key={n} />
-            ))}
-          </div>
-          <h1 className="pixel-title giant">1-UP!</h1>
-          <Card className="prize">
-            <Tag>PRIZE UNLOCKED</Tag>
-            <div className="prize-box">PRIZE PLACEHOLDER</div>
-          </Card>
-          <PixelButton onClick={() => go(index + 1)}>CONTINUE?</PixelButton>
-        </div>
-      );
-    case "world1":
-      return (
-        <WorldCard
-          world="WORLD 1"
-          subtitle="Part A · The Basics"
-          items={[
-            "What is design?",
-            "Graphic design",
-            "Freelancer roadmap",
-            "Design process",
-            "Fields of design",
-            "Pixels & resolution",
-          ]}
-        />
-      );
-    case "designTypes":
-      return (
-        <>
-          <h1 className="pixel-title">WHAT IS DESIGN?</h1>
-          <Card className="table-card">
-            <table>
-              <thead>
-                <tr>
-                  <th>Type</th>
-                  <th>What it is</th>
-                  <th>Typical output</th>
-                </tr>
-              </thead>
-              <tbody>
-                {tableRows.map((r) => (
-                  <tr key={r[0]}>
-                    {r.map((x) => (
-                      <td key={x}>{x}</td>
-                    ))}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            <div className="yellow-bar">
-              UX decides what to build, UI decides how it looks, graphic design provides the visual
-              language both rely on.
-            </div>
-          </Card>
-        </>
-      );
-    case "definition":
-      return (
-        <>
-          <Tag>POWER-UP: CLARITY</Tag>
-          <h1 className="pixel-title">GRAPHIC DESIGN</h1>
-          <Card className="quote">
-            “Combining text, image and shape to deliver a clear message.”
-            <div className="shape-icons">
-              <b>T</b>
-              <span className="picture">▧</span>
-              <span className="triangle" />
-            </div>
-          </Card>
-          <div className="three-col">
-            {["Not decoration", "Making information understandable", "Making it memorable"].map(
-              (x) => (
-                <Card key={x}>
-                  <h3>{x}</h3>
-                </Card>
-              ),
-            )}
-          </div>
-        </>
-      );
-    case "roadmap":
-      return (
-        <>
-          <h1 className="pixel-title">DESIGNER → FREELANCER</h1>
-          <div className="level-map">
-            {[
-              ["1-1", "BASICS", "Practise concepts + Figma daily; recreate work you admire"],
-              ["1-2", "NICHE", "Social, branding, print, CVs, presentations"],
-              ["1-3", "PORTFOLIO", "3–5 strong projects; show process"],
-              ["1-4", "PRESENCE", "Behance, LinkedIn, Instagram"],
-              ["1-5", "CLIENTS", "Friends, associations, local business"],
-              ["1-6", "PRICE", "Fixed price, brief, revisions, deposit"],
-              ["1-7", "GROW", "Testimonials, raise rates, specialise"],
-            ].map((r, i) => (
-              <Card key={r[0]} className={`map-stop s${i}`}>
-                <Tag>{r[0]}</Tag>
-                <b>{r[1]}</b>
-                <p>{r[2]}</p>
-              </Card>
-            ))}
-            <div className="path-line" />
-            <div className="goal-flag">⚑</div>
-          </div>
-        </>
-      );
-    case "process":
-      return (
-        <>
-          <h1 className="pixel-title">THE DESIGN PROCESS</h1>
-          <div className="process-stairs">
-            {[
-              ["BRIEF", "client, goal, audience, deadline"],
-              ["RESEARCH", "competitors, references, moodboard"],
-              ["IDEATION", "many ideas, no judgement"],
-              ["DRAFT", "quick paper or digital sketches"],
-              ["DEVELOP", "colours, type, layout"],
-              ["DESIGN", "build final artwork"],
-              ["DELIVER", "feedback, export, handoff"],
-            ].map((r, i) => (
-              <div key={r[0]} style={{ transform: `translateY(${-i * 20}px)` }}>
-                <Coin n={i + 1} />
-                <b>{r[0]}</b>
-                <span>{r[1]}</span>
-              </div>
-            ))}
-          </div>
-          <Card tone="yellow" className="note">
-            Skipping steps 1 to 5 is the #1 beginner mistake.
-          </Card>
-        </>
-      );
-    case "fields":
-      return (
-        <>
-          <h1 className="pixel-title">FIELDS OF GRAPHIC DESIGN</h1>
-          <div className="field-grid">
-            {fields.map((f, i) => (
-              <Card key={f[0]} className="field">
-                <QuestionBlock small />
-                <span className="field-icon">
-                  {["●", "▣", "↔", "◆", "▶", "▤", "⬡", "✦", "▲"][i]}
-                </span>
-                <div>
-                  <b>{f[0]}</b>
-                  <p>{f[1]}</p>
-                </div>
-              </Card>
-            ))}
-          </div>
-        </>
-      );
-    case "pixels":
-      return (
-        <>
-          <h1 className="pixel-title">PIXELS & RESOLUTION</h1>
-          <div className="two-col pixel-layout">
-            <Card>
-              <h2>PIXEL</h2>
-              <p>The smallest square of a digital image.</p>
-              <div className="pixel-heart">
-                {[
-                  "00100100",
-                  "01111110",
-                  "11111111",
-                  "11111111",
-                  "01111110",
-                  "00111100",
-                  "00011000",
-                ].map((r, y) =>
-                  [...r].map((v, x) => <i key={`${x}${y}`} className={v === "1" ? "on" : ""} />),
-                )}
-              </div>
-            </Card>
-            <Card>
-              <table>
-                <thead>
-                  <tr>
-                    <th>Mode</th>
-                    <th>Meaning</th>
-                    <th>Use</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <td>PPI</td>
-                    <td>pixels per inch</td>
-                    <td>Screen · 72–150</td>
-                  </tr>
-                  <tr>
-                    <td>DPI</td>
-                    <td>dots per inch</td>
-                    <td>Print · 300</td>
-                  </tr>
-                </tbody>
-              </table>
-            </Card>
-          </div>
-          <div className="chips">
-            <span>Web / social: 72 ppi</span>
-            <span>Print: 300 dpi</span>
-            <span>Raster = pixels, vector = shapes</span>
-          </div>
-        </>
-      );
-    case "complete1":
-      return (
-        <CompleteWorld
-          world="1"
-          items={[
-            "What is design?",
-            "Graphic design",
-            "Roadmap",
-            "Process",
-            "Fields",
-            "Resolution",
-          ]}
-          go={() => go(index + 1)}
-        />
-      );
-    case "world2":
-      return (
-        <WorldCard
-          world="WORLD 2"
-          subtitle="Part B · Colour & Type"
-          items={["Colour theory", "Colour modes", "Typography", "Type categories", "Fonts"]}
-        />
-      );
-    case "colour":
-      return (
-        <>
-          <h1 className="pixel-title">COLOUR THEORY</h1>
-          <div className="colour-layout">
-            <div className="colour-wheel">
-              {Array.from({ length: 12 }).map((_, i) => (
-                <i
-                  key={i}
-                  style={{
-                    background: `hsl(${i * 30} 82% 54%)`,
-                    transform: `rotate(${i * 30}deg) skewY(-60deg)`,
-                  }}
-                />
-              ))}
-            </div>
-            <div className="mini-card-grid">
-              {[
-                ["PRIMARY → TERTIARY", "Colours mix into wider families"],
-                ["WARM VS COOL", "Energy versus calm"],
-                ["HARMONIES", "Complementary · analogous · triadic · monochromatic"],
-                ["MEANING", "Red energy · blue trust · green nature · yellow optimism"],
-              ].map((x) => (
-                <Card key={x[0]}>
-                  <b>{x[0]}</b>
-                  <p>{x[1]}</p>
-                </Card>
-              ))}
-            </div>
-          </div>
-          <div className="chips">
-            <span>60–30–10: dominant · secondary · accent</span>
-          </div>
-        </>
-      );
-    case "modes":
-      return (
-        <>
-          <h1 className="pixel-title">COLOUR MODES</h1>
-          <div className="four-col">
-            {[
-              ["RGB", "Red, Green, Blue", "Light on screens", "Web, social, apps"],
-              ["CMYK", "Cyan, Magenta, Yellow, Key", "Ink on paper", "Print"],
-              ["GRAYSCALE", "256 shades of grey", "No colour", "B&W print, photos"],
-              ["BITMAP", "Pure black and white", "1 bit", "Line art, 1-colour logos"],
-            ].map((x, i) => (
-              <Card key={x[0]}>
-                <div className={`mode-swatch m${i}`} />
-                <h2>{x[0]}</h2>
-                <b>{x[1]}</b>
-                <p>{x[2]}</p>
-                <small>USE: {x[3]}</small>
-              </Card>
-            ))}
-          </div>
-          <div className="yellow-bar standalone">
-            Screen = RGB · Print = CMYK. Always pick the mode before you start.
-          </div>
-        </>
-      );
-    case "typography":
-      return (
-        <>
-          <h1 className="pixel-title">TYPOGRAPHY</h1>
-          <p className="subtitle">The art of arranging type</p>
-          <div className="type-anatomy">
-            <Card className="aa-card">
-              <div className="big-aa">Aa</div>
-              {["ascender", "x-height", "baseline", "descender", "serif"].map((x, i) => (
-                <span key={x} className={`callout c${i}`}>
-                  {x}
-                </span>
-              ))}
-            </Card>
-            <div className="type-chips">
-              <Card>
-                <h2>SIZE</h2>
-                <p>Creates hierarchy</p>
-              </Card>
-              <Card>
-                <h2>WEIGHT</h2>
-                <p>Regular to bold</p>
-              </Card>
-              <Card>
-                <h2>SPACING</h2>
-                <p>Leading · tracking</p>
-              </Card>
-            </div>
-          </div>
-        </>
-      );
-    case "typeCats":
-      return (
-        <>
-          <h1 className="pixel-title">TYPE CATEGORIES</h1>
-          <div className="four-col type-cats">
-            {[
-              ["SERIF", "Playfair Display", "Classic, trustworthy", "Editorial · luxury"],
-              ["SANS SERIF", "Inter", "Clean, modern", "Apps · tech"],
-              ["SCRIPT", "Pacifico", "Elegant, handwritten", "Invitations · beauty"],
-              ["DISPLAY", "Bungee", "Bold, decorative", "Posters · logos"],
-            ].map((x, i) => (
-              <Card key={x[0]}>
-                <Tag>{x[0]}</Tag>
-                <div className={`font-sample f${i}`}>{x[0]}</div>
-                <p>{x[2]}</p>
-                <small>{x[3]}</small>
-              </Card>
-            ))}
-          </div>
-        </>
-      );
-    case "fonts":
-      return (
-        <>
-          <h1 className="pixel-title">FONTS</h1>
-          <div className="three-col font-rules">
-            <Card>
-              <Tag>01</Tag>
-              <h2>Family vs font</h2>
-              <p>One family has several weights and styles.</p>
-              <div className="weight-list">
-                <span>Light</span>
-                <span>Regular</span>
-                <b>Bold</b>
-                <i>Italic</i>
-              </div>
-            </Card>
-            <Card>
-              <Tag>02</Tag>
-              <h2>3 pairing rules</h2>
-              <ul>
-                <li>Maximum 2 fonts</li>
-                <li>Pair a serif with a sans</li>
-                <li>Contrast weight and size</li>
-              </ul>
-            </Card>
-            <Card>
-              <Tag>03</Tag>
-              <h2>Find fonts</h2>
-              <p>
-                Google Fonts
-                <br />
-                Fontshare
-                <br />
-                Font Squirrel
-              </p>
-              <b className="licence">CHECK THE LICENCE!</b>
-            </Card>
-          </div>
-        </>
-      );
-    case "complete2":
-      return (
-        <CompleteWorld
-          world="2"
-          items={["Colour theory", "Colour modes", "Typography", "Type categories", "Fonts"]}
-          go={() => go(index + 1)}
-        />
-      );
-    case "world3":
-      return (
-        <WorldCard
-          world="WORLD 3"
-          subtitle="Part C · Concepts"
-          items={["Texture vs pattern", "12 core concepts", "7 bonus rounds", "5 examples"]}
-        />
-      );
-    case "texture":
-      return (
-        <>
-          <h1 className="pixel-title">
-            TEXTURE <span>VS</span> PATTERN
-          </h1>
-          <div className="two-col texture-cards">
-            <Card>
-              <Tag>TEXTURE</Tag>
-              <div className="texture-sample" />
-              <p>
-                How a surface looks or feels: rough, grainy, paper, fabric. It is not repeated on
-                purpose.
-              </p>
-            </Card>
-            <Card>
-              <Tag>PATTERN</Tag>
-              <div className="pattern-sample" />
-              <p>A motif repeated in a regular order: dots, stripes, tiles.</p>
-            </Card>
-          </div>
-          <div className="yellow-bar standalone">Texture = feeling. Pattern = repetition.</div>
-        </>
-      );
-    case "overview":
-      return (
-        <>
-          <h1 className="pixel-title">THE 12 CORE CONCEPTS</h1>
-          <div className="concept-grid">
-            {conceptOverview.map((x, i) => (
-              <Card key={x[0]}>
-                <QuestionBlock small />
-                <b>
-                  <span>{i + 1}</span> {x[0]}
-                </b>
-                <p>{x[1]}</p>
-              </Card>
-            ))}
-          </div>
-        </>
-      );
-    case "concept":
-      return (
-        c && (
-          <>
-            <Tag>CONCEPT {c.n} OF 12</Tag>
-            <h1 className="pixel-title giant concept-title">{c.name}</h1>
-            <Card className="concept-definition">
-              <p>{c.definition}</p>
-            </Card>
-            <Card tone="yellow" className="key-idea">
-              <b>KEY IDEA:</b> {c.key}
-            </Card>
-            <div className="concept-footer">
-              <span>Next: observation game, spot the design that respects {c.name}.</span>
-              <PixelButton onClick={() => go(index + 1)}>START BONUS ROUND</PixelButton>
-            </div>
-          </>
-        )
-      );
-    case "observe":
-      return (
-        c && (
-          <>
-            <div className="observe-top">
-              <Tag>BONUS ROUND · DESIGN {slide.variant}</Tag>
-              <div className="timer">
-                <Coin /> TIME 030
-              </div>
-            </div>
-            <div className="observe-layout">
-              <Card>
-                <h2>Take 30 seconds.</h2>
-                <p>
-                  Does this design respect <b>{c.name}</b>?
-                </p>
-                <p>Look carefully. Note your answer.</p>
-                <div className="tip">
-                  A–E use exactly the same content. Only the design changes.
-                </div>
-                <PixelButton onClick={() => go(index + 1)}>NEXT</PixelButton>
-              </Card>
-              <div className="screen">
-                <span className="variant-label">{slide.variant}</span>
-                <MiniDesign concept={c} variant={slide.variant} />
-              </div>
-            </div>
-          </>
-        )
-      );
-    case "select":
-      return (
-        c && (
-          <>
-            <Tag>BONUS ROUND</Tag>
-            <h1 className="pixel-title selection-title">WHICH ONE RESPECTS {c.name}?</h1>
-            <div className="selection-row">
-              {["A", "B", "C", "D", "E"].map((v) => (
-                <button key={v} className="selection-card" onClick={() => go(index + 1)}>
-                  <div className="thumb">
-                    <MiniDesign concept={c} variant={v} />
-                  </div>
-                  <b>{v}</b>
-                </button>
-              ))}
-            </div>
-            <p className="selection-help">Choose a design to reveal the answer.</p>
-          </>
-        )
-      );
-    case "answer":
-      return (
-        c && (
-          <>
-            <LevelClear />
-            <div className="answer-layout">
-              <div className="screen answer-screen">
-                <div className="coin-burst small">
-                  {[1, 2, 3].map((n) => (
-                    <Coin key={n} />
-                  ))}
-                </div>
-                <MiniDesign concept={c} variant={c.correct} answer />
-              </div>
-              <Card>
-                <Tag>CORRECT ANSWER</Tag>
-                <h1>Design {c.correct}</h1>
-                <p>{c.answer}</p>
-                <PixelButton onClick={() => go(index + 1)}>NEXT POWER-UP</PixelButton>
-              </Card>
-            </div>
-          </>
-        )
-      );
+      body = <div className="cover-layout"><h1>{slide.title}</h1><h2>{slide.subtitle}</h2><div className="cover-copy">{slide.bullets?.map(x => <p key={x}>{x}</p>)}</div><button className="pixel-button" onClick={() => go(1)}>PRESS START</button><div className="coin-row">{[1,2,3].map(x => <PixelArt key={x} />)}<PixelArt type="block" /></div></div>; break;
+    case "ice":
+      body = <div className="split"><div className="card rules"><span className="tag">MINI GAME · 10 MIN</span><h2>{slide.title}</h2><ol>{slide.bullets?.map(x => <li key={x}>{x}</li>)}</ol><p className="callout">{slide.note}</p></div><div className="shape-zone"><div className="timer">TIME 060</div><div className="shapes"><i /><i /><i /></div><button className="pixel-button" onClick={() => go(index + 1)}>START</button></div></div>; break;
+    case "world":
+      body = <div className="world-layout"><span className="tag">NEW WORLD UNLOCKED</span><h1>{slide.title}</h1><h2>{slide.subtitle}</h2><div className="checklist">{slide.bullets?.map(x => <div key={x}><i />{x}</div>)}</div><button className="pixel-button" onClick={() => go(index + 1)}>ENTER WORLD ▶</button></div>; break;
+    case "complete":
+      body = <div className="world-layout complete"><div className="clear-banner"><PixelArt type="flag" /> LEVEL CLEAR!</div><h1>{slide.title}</h1><div className="checklist">{slide.bullets?.map(x => <div key={x}><i className="checked">✓</i>{x}</div>)}</div><button className="pixel-button" onClick={() => go(index + 1)}>NEXT WORLD ▶</button></div>; break;
     case "example":
-      return (
-        c && (
-          <>
-            <Tag>EXAMPLE · {c.name} IN ACTION</Tag>
-            <h1 className="pixel-title">{c.name}</h1>
-            <div className="example-layout">
-              <Card>
-                <h2>WHY IT WORKS</h2>
-                <p>{c.answer}</p>
-                <div className="key-line">
-                  <b>KEY IDEA</b>
-                  <span>{c.key}</span>
-                </div>
-              </Card>
-              <div className="screen">
-                <MiniDesign concept={c} />
-              </div>
-            </div>
-          </>
-        )
-      );
-    case "recap":
-      return (
-        <>
-          <Tag>FINAL BOSS</Tag>
-          <h1 className="pixel-title">WHICH CONCEPTS DID YOU USE?</h1>
-          <div className="coin-concepts">
-            {concepts.map((c) => (
-              <div key={c.n}>
-                <Coin n={c.n} />
-                <span>{c.name}</span>
-              </div>
-            ))}
-          </div>
-          <Card tone="yellow" className="final-question">
-            Which concept do you find the hardest?
-          </Card>
-        </>
-      );
-    case "resources":
-      return (
-        <>
-          <h1 className="pixel-title">RESOURCE CHEST</h1>
-          <Card className="resources">
-            <div>
-              <b>DESIGN TOOLS</b>
-              <p>Figma (free, ideal to start) · Illustrator · Photoshop · Canva · Affinity</p>
-              <b>COLOUR</b>
-              <p>Coolors · Adobe Color · Color Hunt</p>
-              <b>FONTS</b>
-              <p>Google Fonts · Fontshare · Font Squirrel</p>
-              <b>INSPIRATION</b>
-              <p>Behance · Dribbble · Pinterest · Awwwards</p>
-            </div>
-            <div>
-              <b>ASSETS</b>
-              <p>
-                Unsplash · Pexels · Freepik · Flaticon <i>(check licences)</i>
-              </p>
-              <b>CLIENTS & ADMIN</b>
-              <p>Upwork · Fiverr · Contra · LinkedIn · Notion · Trello</p>
-              <b>BOOKS</b>
-              <p>
-                The Non-Designer's Design Book — R. Williams
-                <br />
-                Thinking with Type — E. Lupton
-              </p>
-            </div>
-          </Card>
-        </>
-      );
-    case "habits":
-      return (
-        <>
-          <h1 className="pixel-title">KEEP GOING</h1>
-          <p className="subtitle">Four habits beat one burst of motivation.</p>
-          <div className="habit-grid">
-            {[
-              ["01", "Design a little every day, even 30 minutes"],
-              ["02", "Recreate before you create"],
-              ["03", "Ask for feedback early and often"],
-              ["04", "Save everything you finish: your portfolio is small wins"],
-            ].map((x) => (
-              <Card key={x[0]}>
-                <Coin n={Number(x[0])} />
-                <h2>{x[1]}</h2>
-              </Card>
-            ))}
-          </div>
-        </>
-      );
-    case "thanks":
-      return (
-        <div className="center-screen thanks">
-          <Tag>GAME OVER... CONTINUE?</Tag>
-          <h1 className="pixel-title giant">THANK YOU!</h1>
-          <p>Good luck, designers! Your next checkpoint is your first client.</p>
-          <div className="one-up">
-            <i />
-            <b>1-UP</b>
-          </div>
-          <div className="button-row">
-            <PixelButton onClick={() => go(0)}>YES</PixelButton>
-            <PixelButton onClick={() => go(0)}>NO</PixelButton>
-          </div>
-        </div>
-      );
+    case "type":
+      body = <><Title slide={slide} /><div className="example-layout"><div className="stack">{renderCards()}</div><ExampleVisual label={slide.placeholder || "poster or logo example"} /></div></>; break;
+    case "concept":
+      body = <><Title slide={slide} /><div className="concept-layout">{slide.cards?.map((c, i) => <Card key={i} title={c.title} text={c.text} yellow={i === 1} />)}</div><div className="footer-callout">{slide.note}</div><button className="pixel-button next-cta" onClick={() => go(index + 1)}>START BONUS ROUND ▶</button></>; break;
+    case "observe":
+      body = <><Title slide={slide} /><div className="observe-layout"><div className="card prompt"><div className="timer">{slide.tag}</div><h3>OBSERVATION MISSION</h3><p>{slide.note}</p><small>Auto-advance in 15 seconds</small></div><div className="screen"><MiniDesign concept={slide.concept} variant={slide.variant} lines={slide.bullets} /></div></div></>; break;
+    case "select":
+      body = <><Title slide={slide} /><div className="selection">{(["A","B","C","D"] as const).map(x => <button key={x} onClick={() => go(index + 1)}><PixelArt type="block" /><b>{x}</b><span>SELECT</span></button>)}</div><p className="footer-callout">Pick one. Every answer reveals the correct design.</p></>; break;
+    case "answer":
+      body = <><div className="clear-banner answer-banner"><PixelArt type="flag" /> LEVEL CLEAR!</div><div className="answer-layout"><div className="screen"><MiniDesign concept={slide.concept} variant={slide.variant} lines={slide.bullets} /></div><div className="card"><span className="tag">CORRECT ANSWER</span><h2>{slide.subtitle}</h2><p>{slide.note}</p></div></div></>; break;
+    case "conceptExample":
+      body = <><Title slide={slide} /><div className="example-layout"><div className="card explainer"><h3>WHY IT WORKS</h3><p>{slide.note}</p><div className="key-chip">POWER-UP {slide.concept} / 12</div></div><div className="screen"><MiniDesign concept={slide.concept} variant="A" lines={slide.bullets} /></div></div></>; break;
+    case "table":
+      body = <><Title slide={slide} /><div className="table-card">{slide.table?.map((row, i) => <div className={i === 0 ? "head" : ""} key={i}>{row.map(x => <span key={x}>{x}</span>)}</div>)}</div>{slide.note && <div className="footer-callout">{slide.note}</div>}</>; break;
+    case "steps":
+      body = <><Title slide={slide} /><div className="steps">{slide.bullets?.map((x, i) => <div key={x} style={{ transform: `translateY(${-i * 16}px)` }}><b>{i + 1}</b><span>{x}</span></div>)}</div><div className="footer-callout danger">{slide.note}</div></>; break;
+    case "roadmap":
+      body = <><Title slide={slide} /><div className="roadmap">{slide.cards?.map((c, i) => <Card key={i} title={c.title} text={c.text} yellow={i === 6} />)}<PixelArt type="flag" /></div></>; break;
+    case "pixel":
+      body = <><Title slide={slide} /><div className="split"><div className="card heart-card"><div className="pixel-heart">♥</div>{slide.cards && <><h3>{slide.cards[0].title}</h3><p>{slide.cards[0].text}</p></>}</div>{slide.cards && <Card {...slide.cards[1]} />}</div></>; break;
+    case "wheel":
+    case "rgb":
+    case "cmyk":
+      body = <><Title slide={slide} /><div className="split"><div className={`color-wheel ${slide.kind}`}><i/><i/><i/><b/></div><div className="card list-card"><ul>{slide.bullets?.map(x => <li key={x}>{x}</li>)}</ul></div></div></>; break;
+    case "gallery":
+    case "patterns":
+      body = <><Title slide={slide} /><div className={`visual-grid ${slide.kind}`}>{slide.bullets?.map((x, i) => <div key={x}><div className={`sample sample-${i}`} />{x}</div>)}</div><div className="footer-callout">{slide.note}</div></>; break;
+    case "modes":
+      body = <><Title slide={slide} /><div className="split"><div className="card list-card"><ul>{slide.bullets?.map(x => <li key={x}>{x}</li>)}</ul></div><ExampleVisual label={slide.placeholder || ""} /></div></>; break;
+    case "quiz":
+      body = <><Title slide={slide} /><div className="quiz-grid">{slide.cards?.map((c, i) => <button key={i} onClick={e => e.currentTarget.classList.toggle("revealed")}><span>?</span><b>{c.title}</b><em>{c.text}</em></button>)}</div></>; break;
+    case "practice":
+      body = <div className="practice"><span className="tag blink">BONUS STAGE</span><h1>{slide.title}</h1><h2>{slide.subtitle}</h2><Card title="NEXT STOP" text="The basics of FIGMA" yellow /><div className="power-chips">{slide.bullets?.map(x => <span key={x}>? {x}</span>)}</div><button className="pixel-button pulse" onClick={() => go(index + 1)}>READY PLAYER? START ▶</button></div>; break;
+    case "end":
+      body = <div className="end-layout"><h2>{slide.subtitle}</h2><h1>{slide.title}</h1><div className="one-up"><i /></div><p>{slide.note}</p><div><button className="pixel-button" onClick={() => go(0)}>YES</button><button className="pixel-button no" onClick={() => go(0)}>NO</button></div></div>; break;
     default:
-      return null;
+      body = <><Title slide={slide} />{slide.subtitle && <div className="quote">{slide.subtitle}</div>}{slide.bullets && <div className="bullet-card"><ul>{slide.bullets.map(x => <li key={x}>{x}</li>)}</ul></div>}{slide.cards && renderCards(undefined, slide.kind === "swatches" || slide.kind === "fighters")}{slide.note && <div className="footer-callout">{slide.note}</div>}</>; break;
   }
+  return <div className="slide" aria-label={`${index + 1}. ${slide.title}`}><header className="hud"><span>{slide.world}</span><b>{slide.topic}</b><span>SLIDE {String(index + 1).padStart(3, "0")}/{total}</span></header><main>{body}</main><PixelArt type="coin" /><div className="corner-block"><PixelArt type="block" /></div></div>;
 }
 
-function CompleteWorld({ world, items, go }: { world: string; items: string[]; go: () => void }) {
-  return (
-    <div className="complete">
-      <LevelClear />
-      <WorldCard world={`WORLD ${world}`} subtitle="All topics collected" items={items} complete />
-      <PixelButton onClick={go}>NEXT WORLD ▶</PixelButton>
-    </div>
-  );
+function Title({ slide }: { slide: Slide }) {
+  return <div className="slide-title">{slide.tag && <span className="tag">{slide.tag}</span>}<h1>{slide.title}</h1>{slide.subtitle && <h2>{slide.subtitle}</h2>}</div>;
+}
+
+function MobileSlide({ slide, index, total, go }: { slide: Slide; index: number; total: number; go: (n: number) => void }) {
+  const hasVisual = Boolean(slide.placeholder);
+  const isMini = ["observe", "answer", "conceptExample"].includes(slide.kind || "");
+  return <article className="mobile-slide">
+    <header><span>{slide.world}</span><span>{String(index + 1).padStart(3, "0")} / {total}</span></header>
+    <div className="mobile-topic">{slide.topic}</div>
+    {slide.tag && <span className="mobile-tag">{slide.tag}</span>}
+    <h1>{slide.title}</h1>
+    {slide.subtitle && <h2>{slide.subtitle}</h2>}
+    {hasVisual && <ExampleVisual label={slide.placeholder!} />}
+    {isMini && <div className="mobile-mini"><MiniDesign concept={slide.concept} variant={slide.variant || "A"} lines={slide.bullets} /></div>}
+    {slide.cards && <div className="mobile-cards">{slide.cards.map((item, i) => <Card key={i} title={item.title} text={item.text} yellow={slide.kind === "concept" && i === 1} />)}</div>}
+    {slide.bullets && !isMini && <div className="mobile-list">{slide.bullets.map((item, i) => <div key={`${item}-${i}`}><b>{String(i + 1).padStart(2, "0")}</b><span>{item}</span></div>)}</div>}
+    {slide.table && <div className="mobile-table">{slide.table.map((row, i) => <div key={i}>{row.map(cell => <span key={cell}>{cell}</span>)}</div>)}</div>}
+    {slide.note && <p className="mobile-note">{slide.note}</p>}
+    {slide.kind === "select" && <div className="mobile-select">{["A", "B", "C", "D"].map(x => <button key={x} onClick={() => go(index + 1)}>{x}</button>)}</div>}
+    <div className="mobile-actions"><button onClick={() => go(index - 1)} disabled={index === 0}>← BACK</button><button onClick={() => go(index + 1)} disabled={index === total - 1}>NEXT →</button></div>
+  </article>;
 }
 
 export default function App() {
-  const [index, setIndex] = useState(0);
-  const slide = slides[index];
-  const go = (next: number) => setIndex(Math.max(0, Math.min(slides.length - 1, next)));
-
+  const slides = useMemo(buildSlides, []);
+  const [current, setCurrent] = useState(() => Math.max(0, Math.min(slides.length - 1, Number(location.hash.slice(1)) - 1 || 0)));
+  const [overview, setOverview] = useState(false);
+  const go = (n: number) => setCurrent(Math.max(0, Math.min(slides.length - 1, n)));
+  useEffect(() => { location.hash = String(current + 1); }, [current]);
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (["ArrowRight", "PageDown", " "].includes(e.key)) go(index + 1);
-      if (["ArrowLeft", "PageUp"].includes(e.key)) go(index - 1);
+    const key = (e: KeyboardEvent) => {
+      if (["ArrowRight", "PageDown", " "].includes(e.key)) go(current + 1);
+      if (["ArrowLeft", "PageUp"].includes(e.key)) go(current - 1);
       if (e.key === "Home") go(0);
       if (e.key === "End") go(slides.length - 1);
+      if (e.key.toLowerCase() === "o") setOverview(v => !v);
+      if (e.key === "Escape") setOverview(false);
     };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [index]);
-
+    addEventListener("keydown", key); return () => removeEventListener("keydown", key);
+  }, [current, slides.length]);
   useEffect(() => {
-    if (slide.kind !== "observe") return;
-    const timer = window.setTimeout(() => go(index + 1), 30_000);
-    return () => window.clearTimeout(timer);
-  }, [index, slide.kind]);
-
-  const progress = useMemo(() => ((index + 1) / slides.length) * 100, [index]);
-
+    if (slides[current].kind !== "observe") return;
+    const timer = setTimeout(() => go(current + 1), 15000);
+    return () => clearTimeout(timer);
+  }, [current, slides]);
   return (
-    <main className="stage">
-      <section className="deck" aria-label="SkillFest 2 Graphic Design Workshop">
-        <img
-          className="background"
-          src="/assets/skillfest-background.png"
-          alt=""
-          draggable={false}
-        />
-        {index > 0 && <Hud slide={slide} index={index} />}
-        <div className={`slide-content kind-${slide.kind}`} key={slide.id}>
-          <SlideContent slide={slide} go={go} index={index} />
-        </div>
-        <nav className="nav" aria-label="Slide navigation">
-          <button onClick={() => go(index - 1)} disabled={index === 0} aria-label="Previous slide">
-            ◀
-          </button>
-          <span>{slide.id}</span>
-          <div className="progress">
-            <i style={{ width: `${progress}%` }} />
-          </div>
-          <button
-            onClick={() => go(index + 1)}
-            disabled={index === slides.length - 1}
-            aria-label="Next slide"
-          >
-            ▶
-          </button>
-        </nav>
-      </section>
-    </main>
+    <div className="app">
+      <div className="stage"><SlideView slide={slides[current]} index={current} total={slides.length} go={go} /></div>
+      <div className="mobile-stage"><MobileSlide slide={slides[current]} index={current} total={slides.length} go={go} /></div>
+      <nav className="controls" aria-label="Slide controls">
+        <button onClick={() => go(current - 1)} disabled={current === 0}>←</button>
+        <button className="count" onClick={() => setOverview(true)}>{current + 1} / {slides.length}</button>
+        <button onClick={() => go(current + 1)} disabled={current === slides.length - 1}>→</button>
+      </nav>
+      <button className="overview-button" onClick={() => setOverview(true)}>ALL SLIDES</button>
+      {overview && <div className="overview"><div className="overview-head"><h2>LEVEL SELECT · 128 SLIDES</h2><button onClick={() => setOverview(false)}>CLOSE ×</button></div><div className="slide-list">{slides.map((s, i) => <button className={i === current ? "active" : ""} key={s.id} onClick={() => { go(i); setOverview(false); }}><small>{String(i + 1).padStart(3, "0")} · {s.id}</small><b>{s.title}</b><span>{s.topic}</span></button>)}</div></div>}
+    </div>
   );
 }
