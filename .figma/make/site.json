@@ -1,0 +1,10 @@
+{
+  "description": "An interactive, game-themed graphic design workshop for beginners, teaching core design principles through lessons, examples, and mini-games.",
+  "robots": {
+    "index": false
+  },
+  "accessibility": {
+    "addBypassLinks": false,
+    "ignoreReducedMotion": false
+  }
+}
